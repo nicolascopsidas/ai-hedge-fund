@@ -6,56 +6,104 @@ import pandas as pd
 from src.polygon_tools import get_price_data
 from src.agents import run_hedge_fund
 
+
 class Backtester:
-    def __init__(self, agent, ticker, start_date, end_date, initial_capital, asset_type='crypto'):
+    """
+    Backtester for cryptocurrency trading strategies.
+    
+    Args:
+        agent: Trading agent that implements the strategy
+        ticker (str): Cryptocurrency ticker (e.g., 'BTC')
+        start_date (str): Start date in YYYY-MM-DD format
+        end_date (str): End date in YYYY-MM-DD format
+        initial_capital (float): Initial capital in quote currency
+        asset_type (str, optional): Type of asset. Defaults to 'crypto'
+        lookback_days (int, optional): Number of days to look back for analysis. Defaults to 30
+    
+    Raises:
+        ValueError: If start_date is after end_date or dates are invalid
+    """
+    
+    def __init__(self, agent, ticker, start_date, end_date, initial_capital, asset_type='crypto', lookback_days=30):
+        # Validate dates
+        try:
+            start = datetime.strptime(start_date, "%Y-%m-%d")
+            end = datetime.strptime(end_date, "%Y-%m-%d")
+            if start >= end:
+                raise ValueError("start_date must be before end_date")
+        except ValueError as e:
+            raise ValueError(f"Invalid date format. Use YYYY-MM-DD. Error: {str(e)}")
+            
         self.agent = agent
         self.ticker = ticker
         self.start_date = start_date
         self.end_date = end_date
         self.initial_capital = initial_capital
         self.asset_type = asset_type
-        self.portfolio = {"cash": initial_capital, "stock": 0}
+        self.lookback_days = lookback_days
+        
+        # Initialize portfolio with cash and assets (not "stock" since we're dealing with crypto)
+        self.portfolio = {
+            "cash": initial_capital,
+            "assets": 0,
+            "portfolio_value": initial_capital
+        }
         self.portfolio_values = []
 
     def parse_action(self, agent_output):
+        """Parse the trading action from agent output."""
         try:
-            # Expect JSON output from agent
-            import json
-            decision = json.loads(agent_output)
-            return decision["action"], decision["quantity"]
-        except:
-            print(f"Error parsing action: {agent_output}")
-            return "hold", 0
+            action = agent_output.get('action', 'hold').lower()
+            quantity = float(agent_output.get('quantity', 0))
+            
+            if action not in ['buy', 'sell', 'hold']:
+                print(f"Invalid action '{action}', defaulting to 'hold'")
+                return 'hold', 0
+                
+            return action, quantity
+        except (ValueError, AttributeError) as e:
+            print(f"Error parsing agent output: {e}")
+            return 'hold', 0
 
     def execute_trade(self, action, quantity, current_price):
-        """Validate and execute trades based on portfolio constraints"""
-        if action == "buy" and quantity > 0:
-            cost = quantity * current_price
-            if cost <= self.portfolio["cash"]:
-                self.portfolio["stock"] += quantity
-                self.portfolio["cash"] -= cost
-                return quantity
-            else:
-                # Calculate maximum affordable quantity
-                max_quantity = self.portfolio["cash"] // current_price
-                if max_quantity > 0:
-                    self.portfolio["stock"] += max_quantity
-                    self.portfolio["cash"] -= max_quantity * current_price
-                    return max_quantity
-                return 0
-        elif action == "sell" and quantity > 0:
-            quantity = min(quantity, self.portfolio["stock"])
-            if quantity > 0:
-                self.portfolio["cash"] += quantity * current_price
-                self.portfolio["stock"] -= quantity
-                return quantity
+        """
+        Execute a trade based on the action and validate against portfolio constraints.
+        
+        Returns:
+            float: Actually executed quantity
+        """
+        if action == 'hold' or quantity <= 0:
             return 0
+
+        if action == 'buy':
+            max_possible = self.portfolio['cash'] / current_price
+            executable_quantity = min(quantity, max_possible)
+            
+            if executable_quantity < quantity:
+                print(f"Insufficient funds. Reduced buy order from {quantity} to {executable_quantity}")
+                
+            cost = executable_quantity * current_price
+            self.portfolio['cash'] -= cost
+            self.portfolio['assets'] += executable_quantity
+            return executable_quantity
+
+        elif action == 'sell':
+            executable_quantity = min(quantity, self.portfolio['assets'])
+            
+            if executable_quantity < quantity:
+                print(f"Insufficient assets. Reduced sell order from {quantity} to {executable_quantity}")
+                
+            proceeds = executable_quantity * current_price
+            self.portfolio['cash'] += proceeds
+            self.portfolio['assets'] -= executable_quantity
+            return -executable_quantity
+
         return 0
 
     def run_backtest(self):
         """Run the backtest simulation."""
         print("Starting backtest...")
-        print(f"{'Date':11} {'Ticker':6} {'Action':6} {'Quantity':8} {'Price':11} {'Cash':8} {'Stock':6} {'Total Value'}")
+        print(f"{'Date':11} {'Ticker':6} {'Action':6} {'Quantity':8} {'Price':11} {'Cash':8} {'Assets':6} {'Total Value'}")
         print("-" * 70)
 
         # Generate dates for the backtest period
@@ -64,7 +112,7 @@ class Backtester:
         dates = pd.date_range(start=start, end=end, freq='D')
 
         for current_date in dates:
-            lookback_start = (current_date - timedelta(days=30)).strftime("%Y-%m-%d")
+            lookback_start = (current_date - timedelta(days=self.lookback_days)).strftime("%Y-%m-%d")
             current_date_str = current_date.strftime("%Y-%m-%d")
 
             agent_output = self.agent(
@@ -87,18 +135,17 @@ class Backtester:
             executed_quantity = self.execute_trade(action, quantity, current_price)
 
             # Update total portfolio value
-            total_value = self.portfolio["cash"] + self.portfolio["stock"] * current_price
-            self.portfolio["portfolio_value"] = total_value
+            self.portfolio['portfolio_value'] = self.portfolio['cash'] + self.portfolio['assets'] * current_price
 
             # Log the current state with executed quantity
             print(
                 f"{current_date.strftime('%Y-%m-%d'):<11} {self.ticker:<6} {action:<6} {executed_quantity:>8} {current_price:>11.2f} "
-                f"{self.portfolio['cash']:>8.2f} {self.portfolio['stock']:>6} {total_value:>12.2f}"
+                f"{self.portfolio['cash']:>8.2f} {self.portfolio['assets']:>6} {self.portfolio['portfolio_value']:>12.2f}"
             )
 
             # Record the portfolio value
             self.portfolio_values.append(
-                {"Date": current_date, "Portfolio Value": total_value}
+                {"Date": current_date, "Portfolio Value": self.portfolio['portfolio_value']}
             )
 
     def analyze_performance(self):
