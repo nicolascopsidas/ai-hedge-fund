@@ -26,33 +26,41 @@ This project is for **educational and research purposes only**.
 By using this software, you agree to use it solely for learning purposes.
 
 ## Table of Contents
-- [Setup](#setup)
-- [Usage](#usage)
-  - [Running the Hedge Fund](#running-the-hedge-fund)
-  - [Running the Backtester](#running-the-backtester)
-- [Project Structure](#project-structure)
-- [Contributing](#contributing)
-- [License](#license)
+
+- [AI Hedge Fund](#ai-hedge-fund)
+  - [Disclaimer](#disclaimer)
+  - [Table of Contents](#table-of-contents)
+  - [Setup](#setup)
+  - [Usage](#usage)
+    - [Running the Hedge Fund](#running-the-hedge-fund)
+    - [Running the Backtester](#running-the-backtester)
+  - [Project Structure](#project-structure)
+  - [Contributing](#contributing)
+  - [License](#license)
 
 ## Setup
 
 Clone the repository:
+
 ```bash
 git clone https://github.com/virattt/ai-hedge-fund.git
 cd ai-hedge-fund
 ```
 
 1. Install Poetry (if not already installed):
+
 ```bash
 curl -sSL https://install.python-poetry.org | python3 -
 ```
 
 2. Install dependencies:
+
 ```bash
 poetry install
 ```
 
 3. Set up your environment variables:
+
 ```bash
 # Create .env file for your API keys
 cp .env.example .env
@@ -74,10 +82,11 @@ You can also specify a `--show-reasoning` flag to print the reasoning of each ag
 ```bash
 poetry run python src/agents.py --ticker AAPL --show-reasoning
 ```
+
 You can optionally specify the start and end dates to make decisions for a specific time period.
 
 ```bash
-poetry run python src/agents.py --ticker AAPL --start-date 2024-01-01 --end-date 2024-03-01 
+poetry run python src/agents.py --ticker AAPL --start-date 2024-01-01 --end-date 2024-03-01
 ```
 
 ### Running the Backtester
@@ -87,6 +96,7 @@ poetry run python src/backtester.py --ticker AAPL
 ```
 
 **Example Output:**
+
 ```
 Starting backtest...
 Date         Ticker Action Quantity    Price         Cash    Stock  Total Value
@@ -103,10 +113,11 @@ Date         Ticker Action Quantity    Price         Cash    Stock  Total Value
 You can optionally specify the start and end dates to backtest over a specific time period.
 
 ```bash
-poetry run python src/backtester.py --ticker AAPL --start-date 2024-01-01 --end-date 2024-03-01
+poetry run python src/backtester.py --ticker AAPL --start_date 2024-01-01 --end_date 2024-03-01
 ```
 
-## Project Structure 
+## Project Structure
+
 ```
 ai-hedge-fund/
 ├── src/

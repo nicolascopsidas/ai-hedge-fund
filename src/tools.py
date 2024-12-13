@@ -81,10 +81,8 @@ def get_insider_trades(ticker, start_date, end_date):
             f"Error fetching data: {response.status_code} - {response.text}"
         )
     data = response.json()
-    insider_trades = data.get("insider_trades")
-    if not insider_trades:
-        raise ValueError("No insider trades returned")
-    return insider_trades
+    insider_trades = data.get("insider_trades", [])
+    return insider_trades  # Return empty list if no trades found
 
 def calculate_confidence_level(signals):
     """Calculate confidence level based on the difference between SMAs."""

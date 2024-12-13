@@ -5,12 +5,17 @@ from langchain_core.messages import BaseMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai.chat_models import ChatOpenAI
 from langgraph.graph import END, StateGraph
+from dotenv import load_dotenv
+import os
 
 from src.tools import calculate_bollinger_bands, calculate_macd, calculate_obv, calculate_rsi, get_financial_metrics, get_insider_trades, get_prices, prices_to_df
 
 import argparse
 from datetime import datetime
 import json
+
+# Load environment variables from .env file
+load_dotenv()
 
 llm = ChatOpenAI(model="gpt-4o")
 
@@ -62,6 +67,17 @@ def market_data_agent(state: AgentState):
         end_date=end_date,
     )
 
+    # Create a message about insider trades
+    if insider_trades:
+        insider_trades_message = "Found insider trading activity in the specified period."
+    else:
+        insider_trades_message = "No insider trading activity found in the specified period."
+
+    messages.append(
+        HumanMessage(
+            content=f"Market data has been collected for {data['ticker']}. {insider_trades_message}"
+        )
+    )
 
     return {
         "messages": messages,
