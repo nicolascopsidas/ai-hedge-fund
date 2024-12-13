@@ -3,16 +3,17 @@ from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from src.tools import get_price_data
+from src.polygon_tools import get_price_data
 from src.agents import run_hedge_fund
 
 class Backtester:
-    def __init__(self, agent, ticker, start_date, end_date, initial_capital):
+    def __init__(self, agent, ticker, start_date, end_date, initial_capital, asset_type='crypto'):
         self.agent = agent
         self.ticker = ticker
         self.start_date = start_date
         self.end_date = end_date
         self.initial_capital = initial_capital
+        self.asset_type = asset_type
         self.portfolio = {"cash": initial_capital, "stock": 0}
         self.portfolio_values = []
 
@@ -52,11 +53,15 @@ class Backtester:
         return 0
 
     def run_backtest(self):
-        dates = pd.date_range(self.start_date, self.end_date, freq="B")
-
-        print("\nStarting backtest...")
-        print(f"{'Date':<12} {'Ticker':<6} {'Action':<6} {'Quantity':>8} {'Price':>8} {'Cash':>12} {'Stock':>8} {'Total Value':>12}")
+        """Run the backtest simulation."""
+        print("Starting backtest...")
+        print(f"{'Date':11} {'Ticker':6} {'Action':6} {'Quantity':8} {'Price':11} {'Cash':8} {'Stock':6} {'Total Value'}")
         print("-" * 70)
+
+        # Generate dates for the backtest period
+        start = datetime.strptime(self.start_date, "%Y-%m-%d")
+        end = datetime.strptime(self.end_date, "%Y-%m-%d")
+        dates = pd.date_range(start=start, end=end, freq='D')
 
         for current_date in dates:
             lookback_start = (current_date - timedelta(days=30)).strftime("%Y-%m-%d")
@@ -70,7 +75,12 @@ class Backtester:
             )
 
             action, quantity = self.parse_action(agent_output)
-            df = get_price_data(self.ticker, lookback_start, current_date_str)
+            df = get_price_data(self.ticker, lookback_start, current_date_str, asset_type=self.asset_type)
+            
+            if df.empty:
+                print(f"No price data available for {self.ticker} on {current_date_str}")
+                continue
+                
             current_price = df.iloc[-1]['close']
 
             # Execute the trade with validation
@@ -82,8 +92,8 @@ class Backtester:
 
             # Log the current state with executed quantity
             print(
-                f"{current_date.strftime('%Y-%m-%d'):<12} {self.ticker:<6} {action:<6} {executed_quantity:>8} {current_price:>8.2f} "
-                f"{self.portfolio['cash']:>12.2f} {self.portfolio['stock']:>8} {total_value:>12.2f}"
+                f"{current_date.strftime('%Y-%m-%d'):<11} {self.ticker:<6} {action:<6} {executed_quantity:>8} {current_price:>11.2f} "
+                f"{self.portfolio['cash']:>8.2f} {self.portfolio['stock']:>6} {total_value:>12.2f}"
             )
 
             # Record the portfolio value
