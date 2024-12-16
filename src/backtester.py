@@ -17,14 +17,13 @@ class Backtester:
         start_date (str): Start date in YYYY-MM-DD format
         end_date (str): End date in YYYY-MM-DD format
         initial_capital (float): Initial capital in quote currency
-        asset_type (str, optional): Type of asset. Defaults to 'crypto'
         lookback_days (int, optional): Number of days to look back for analysis. Defaults to 30
     
     Raises:
         ValueError: If start_date is after end_date or dates are invalid
     """
     
-    def __init__(self, agent, ticker, start_date, end_date, initial_capital, asset_type='crypto', lookback_days=30):
+    def __init__(self, agent, ticker, start_date, end_date, initial_capital, lookback_days=30):
         # Validate dates
         try:
             start = datetime.strptime(start_date, "%Y-%m-%d")
@@ -39,10 +38,9 @@ class Backtester:
         self.start_date = start_date
         self.end_date = end_date
         self.initial_capital = initial_capital
-        self.asset_type = asset_type
         self.lookback_days = lookback_days
         
-        # Initialize portfolio with cash and assets (not "stock" since we're dealing with crypto)
+        # Initialize portfolio with cash and crypto assets
         self.portfolio = {
             "cash": initial_capital,
             "assets": 0,
@@ -123,7 +121,7 @@ class Backtester:
             )
 
             action, quantity = self.parse_action(agent_output)
-            df = get_price_data(self.ticker, lookback_start, current_date_str, asset_type=self.asset_type)
+            df = get_price_data(self.ticker, lookback_start, current_date_str)
             
             if df.empty:
                 print(f"No price data available for {self.ticker} on {current_date_str}")
@@ -187,24 +185,27 @@ class Backtester:
 if __name__ == "__main__":
     import argparse
     
-    # Set up argument parser
-    parser = argparse.ArgumentParser(description='Run backtesting simulation')
-    parser.add_argument('--ticker', type=str, help='Stock ticker symbol (e.g., AAPL)')
-    parser.add_argument('--end_date', type=str, default=datetime.now().strftime('%Y-%m-%d'), help='End date in YYYY-MM-DD format')
-    parser.add_argument('--start_date', type=str, default=(datetime.now() - timedelta(days=90)).strftime('%Y-%m-%d'), help='Start date in YYYY-MM-DD format')
-    parser.add_argument('--initial_capital', type=float, default=100000, help='Initial capital amount (default: 100000)')
-
+    parser = argparse.ArgumentParser(description="Run cryptocurrency trading strategy backtest")
+    parser.add_argument("--ticker", type=str, required=True, help="Cryptocurrency ticker (e.g., 'BTC')")
+    parser.add_argument("--start_date", type=str, required=True, help="Start date (YYYY-MM-DD)")
+    parser.add_argument("--end_date", type=str, required=True, help="End date (YYYY-MM-DD)")
+    parser.add_argument("--initial_capital", type=float, default=10000, help="Initial capital in USD")
+    parser.add_argument("--lookback_days", type=int, default=30, help="Number of days to look back for analysis")
+    
     args = parser.parse_args()
-
-    # Create an instance of Backtester
+    
+    # Run the backtest with the specified parameters
     backtester = Backtester(
         agent=run_hedge_fund,
         ticker=args.ticker,
         start_date=args.start_date,
         end_date=args.end_date,
         initial_capital=args.initial_capital,
+        lookback_days=args.lookback_days
     )
-
-    # Run the backtesting process
+    
+    # Run the backtest
     backtester.run_backtest()
+    
+    # Analyze and display results
     performance_df = backtester.analyze_performance()

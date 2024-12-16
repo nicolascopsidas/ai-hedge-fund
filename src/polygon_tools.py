@@ -19,14 +19,16 @@ def get_polygon_headers() -> Dict[str, str]:
 
 
 def format_crypto_ticker(ticker: str) -> str:
-    """Format a cryptocurrency ticker for the Polygon API."""
-    # Remove any existing X: prefix
-    ticker = ticker.replace("X:", "")
+    """Format a cryptocurrency ticker for the Polygon API.
     
-    # Remove USD suffix if present
-    ticker = ticker.replace("USD", "")
+    Args:
+        ticker (str): The cryptocurrency ticker (e.g., 'BTC', 'ETH')
     
-    # Add X: prefix and USD suffix
+    Returns:
+        str: Formatted ticker symbol in X:BTCUSD format
+    """
+    # Remove any existing formatting
+    ticker = ticker.upper().replace("USD", "").replace("X:", "").replace("-", "")
     return f"X:{ticker}USD"
 
 
@@ -41,14 +43,13 @@ def format_date(date_str: str) -> str:
     return str(timestamp_ms)
 
 
-def get_prices(ticker: str, start_date: str, end_date: str, asset_type: str = 'crypto'):
-    """Fetch price data from Polygon.io.
+def get_prices(ticker: str, start_date: str, end_date: str):
+    """Fetch cryptocurrency price data from Polygon.io.
     
     Args:
-        ticker (str): The ticker symbol
+        ticker (str): The cryptocurrency ticker symbol (e.g., 'BTC', 'ETH')
         start_date (str): Start date in YYYY-MM-DD format
         end_date (str): End date in YYYY-MM-DD format
-        asset_type (str, optional): Type of asset ('crypto' or 'stock'). Defaults to 'crypto'.
     """
     if not POLYGON_API_KEY:
         raise ValueError("POLYGON_API_KEY environment variable not set")
@@ -57,14 +58,13 @@ def get_prices(ticker: str, start_date: str, end_date: str, asset_type: str = 'c
     formatted_start = format_date(start_date)
     formatted_end = format_date(end_date)
     
-    # Format ticker for crypto if needed
-    if asset_type.lower() == 'crypto':
-        ticker = format_crypto_ticker(ticker)
+    # Format ticker for crypto
+    ticker = format_crypto_ticker(ticker)
     
     # Construct API URL
     url = f"https://api.polygon.io/v2/aggs/ticker/{ticker}/range/1/day/{formatted_start}/{formatted_end}"
     
-    # Make API request with API key in query parameters (as per Polygon.io docs)
+    # Make API request with API key in query parameters
     response = requests.get(
         url,
         params={
@@ -100,199 +100,201 @@ def get_prices(ticker: str, start_date: str, end_date: str, asset_type: str = 'c
     # Convert timestamp from milliseconds to datetime
     df["timestamp"] = pd.to_datetime(df["timestamp"], unit="ms")
     
-    # Set timestamp as index
-    df.set_index("timestamp", inplace=True)
-    
     return df
 
 
-def get_financial_metrics(ticker: str, report_period: str, period='ttm', limit=1, asset_type='stock'):
-    """Fetch financial metrics from Polygon.io.
+def get_crypto_metrics(ticker: str):
+    """Get crypto-specific metrics from Polygon.io
     
-    For crypto assets, most traditional financial metrics don't apply,
-    so we'll return market-specific metrics instead.
+    Args:
+        ticker (str): The cryptocurrency ticker symbol (e.g., 'BTC', 'ETH')
+    
+    Returns:
+        dict: Dictionary containing crypto metrics
     """
-    if asset_type.lower() == 'crypto':
-        return get_crypto_metrics(ticker, report_period)
+    formatted_ticker = format_crypto_ticker(ticker)
     
-    headers = get_polygon_headers()
-    url = f"https://api.polygon.io/vX/reference/financials?ticker={ticker}&timeframe=quarterly&limit={limit}"
+    # Get daily aggregates for the ticker
+    url = f"https://api.polygon.io/v2/aggs/ticker/{formatted_ticker}/prev"
     
-    response = requests.get(url, headers=headers)
+    response = requests.get(
+        url,
+        params={"apiKey": POLYGON_API_KEY}
+    )
+    
     if response.status_code != 200:
-        raise ValueError(f"Error fetching financial metrics: {response.status_code} - {response.text}")
+        print(f"Error getting crypto metrics: {response.status_code}")
+        return get_default_crypto_metrics()
         
-    data = response.json()
-    results = data.get("results", [])
-
-    if not results:
-        raise ValueError("No financial metrics found")
+    try:
+        data = response.json()
+        if not data.get("results"):
+            print(f"No results found for {formatted_ticker}")
+            return get_default_crypto_metrics()
+            
+        result = data["results"][0]
         
-    metrics = []
-    for result in results:
-        financials = result.get("financials", {})
-        income_stmt = financials.get("income_statement", {})
-        balance_sheet = financials.get("balance_sheet", {})
-        total_revenue = income_stmt.get("revenues", {}).get("value", 0)
-        net_income = income_stmt.get("net_income_loss", {}).get("value", 0)
-        total_assets = balance_sheet.get("assets", {}).get("value", 0)
-        total_equity = balance_sheet.get("equity", {}).get("value", 0)
-
-        metrics.append({
-            "return_on_equity": net_income / total_equity if total_equity else 0.0,
-            "net_margin": net_income / total_revenue if total_revenue else 0.0,
-            "operating_margin": income_stmt.get("operating_income_loss", {}).get("value", 0) / total_revenue if total_revenue else 0.0,
-            "revenue_growth": 0.0,  # Need historical data to calculate growth
-            "earnings_growth": 0.0,  # Need historical data to calculate growth
-            "book_value_growth": 0.0,  # Need historical data to calculate growth
-            "current_ratio": balance_sheet.get("current_assets", {}).get("value", 0) / balance_sheet.get("current_liabilities", {}).get("value", 1),
-            "debt_to_equity": balance_sheet.get("liabilities", {}).get("value", 0) / total_equity if total_equity else 0.0,
-            "free_cash_flow_per_share": 0.0,  # Need cash flow statement data
-            "earnings_per_share": net_income / financials.get("shares", 1),
-            "price_to_earnings_ratio": 0.0,  # Need current price data
-            "price_to_book_ratio": 0.0,  # Need current price data
-            "price_to_sales_ratio": 0.0  # Need current price data
-        })
-
-    return metrics
-
-
-def get_crypto_metrics(ticker: str, report_period: str):
-    """Get crypto-specific metrics from Polygon.io"""
-    headers = get_polygon_headers()
-    ticker = format_crypto_ticker(ticker)
-    
-    # Get 24h stats for the crypto
-    url = f"https://api.polygon.io/v2/aggs/ticker/{ticker}/prev"
-    
-    response = requests.get(url, headers=headers)
-    if response.status_code != 200:
-        raise ValueError(f"Error fetching crypto metrics: {response.status_code} - {response.text}")
+        # Calculate market cap using closing price and a fixed supply for major cryptos
+        supply_map = {
+            "BTC": 21000000,  # Bitcoin max supply
+            "ETH": 120000000,  # Ethereum approximate supply
+            "DOGE": 140000000000,  # Dogecoin approximate supply
+            "SOL": 550000000,  # Solana approximate supply
+        }
         
-    data = response.json()
-    result = data.get("results", [{}])[0]
-    
-    return [{
-        "24h_volume": result.get('v', 0),
-        "24h_vwap": result.get('vw', 0),
-        "24h_open": result.get('o', 0),
-        "24h_close": result.get('c', 0),
-        "24h_high": result.get('h', 0),
-        "24h_low": result.get('l', 0),
-        "24h_transactions": result.get('n', 0),
-        # Traditional metrics set to 0 for crypto
-        "return_on_equity": 0.0,
-        "net_margin": 0.0,
-        "operating_margin": 0.0,
-        "revenue_growth": 0.0,
-        "earnings_growth": 0.0,
-        "book_value_growth": 0.0,
-        "current_ratio": 0.0,
-        "debt_to_equity": 0.0,
-        "free_cash_flow_per_share": 0.0,
-        "earnings_per_share": 0.0,
-        "price_to_earnings_ratio": 0.0,
-        "price_to_book_ratio": 0.0,
-        "price_to_sales_ratio": 0.0
-    }]
-
-
-def get_default_metrics():
-    """Return default metrics when data is unavailable."""
-    return {
-        "return_on_equity": 0.0,
-        "net_margin": 0.0,
-        "operating_margin": 0.0,
-        "revenue_growth": 0.0,
-        "earnings_growth": 0.0,
-        "book_value_growth": 0.0,
-        "current_ratio": 0.0,
-        "debt_to_equity": 0.0,
-        "free_cash_flow_per_share": 0.0,
-        "earnings_per_share": 0.0,
-        "price_to_earnings_ratio": 0.0,
-        "price_to_book_ratio": 0.0,
-        "price_to_sales_ratio": 0.0
-    }
+        base_ticker = ticker.upper().replace("USD", "").replace("X:", "").replace("-", "")
+        circulating_supply = supply_map.get(base_ticker, 0)
+        market_cap = result.get("c", 0) * circulating_supply
+        
+        return {
+            "market_cap": market_cap,
+            "volume_24h": result.get("v", 0) * result.get("c", 0),  # volume in USD
+            "vwap_24h": result.get("vw", 0),
+            "open_24h": result.get("o", 0),
+            "close_24h": result.get("c", 0),
+            "high_24h": result.get("h", 0),
+            "low_24h": result.get("l", 0),
+            "transactions_24h": result.get("n", 0),
+            "circulating_supply": circulating_supply,
+            "max_supply": supply_map.get(base_ticker, 0),
+            "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
+    except Exception as e:
+        print(f"Error processing crypto metrics: {e}")
+        return get_default_crypto_metrics()
 
 
 def get_default_crypto_metrics():
     """Return default crypto metrics when data is unavailable."""
     return {
-        "24h_volume": 0.0,
-        "24h_vwap": 0.0,
-        "24h_open": 0.0,
-        "24h_close": 0.0,
-        "24h_high": 0.0,
-        "24h_low": 0.0,
-        "24h_transactions": 0,
-        "return_on_equity": 0.0,
-        "net_margin": 0.0,
-        "operating_margin": 0.0,
-        "revenue_growth": 0.0,
-        "earnings_growth": 0.0,
-        "book_value_growth": 0.0,
-        "current_ratio": 0.0,
-        "debt_to_equity": 0.0,
-        "free_cash_flow_per_share": 0.0,
-        "earnings_per_share": 0.0,
-        "price_to_earnings_ratio": 0.0,
-        "price_to_book_ratio": 0.0,
-        "price_to_sales_ratio": 0.0
+        "market_cap": 0,
+        "volume_24h": 0,
+        "vwap_24h": 0,
+        "open_24h": 0,
+        "close_24h": 0,
+        "high_24h": 0,
+        "low_24h": 0,
+        "transactions_24h": 0,
+        "circulating_supply": 0,
+        "max_supply": 0,
+        "last_updated": ""
     }
 
 
-def get_insider_trades(ticker: str, start_date: str, end_date: str, asset_type='stock'):
-    """Fetch insider trades from Polygon.io.
-    Note: This is only available for stocks, not crypto."""
-    if asset_type.lower() == 'crypto':
-        return []  # Crypto doesn't have insider trades
+def get_price_data(ticker: str, start_date: str, end_date: str):
+    """Get cryptocurrency price data from Polygon API.
+    
+    Args:
+        ticker (str): The cryptocurrency ticker symbol (e.g., 'BTC', 'ETH')
+        start_date (str): Start date in YYYY-MM-DD format
+        end_date (str): End date in YYYY-MM-DD format
         
-    headers = get_polygon_headers()
-    url = "https://api.polygon.io/v2/reference/insider-transactions"
-    params = {
-        "ticker": ticker,
-        "limit": 50
+    Returns:
+        pd.DataFrame: DataFrame with price data
+    """
+    return get_prices(ticker, start_date, end_date)
+
+
+def get_technical_indicators(ticker: str, start_date: str = None):
+    """Get technical indicators from Polygon.io for a given crypto ticker
+    
+    Args:
+        ticker (str): The cryptocurrency ticker symbol (e.g., 'BTC', 'ETH')
+        start_date (str, optional): Start date in YYYY-MM-DD format. Defaults to today.
+    
+    Returns:
+        dict: Dictionary containing technical indicators
+    """
+    ticker = format_crypto_ticker(ticker)
+    
+    if not start_date:
+        start_date = datetime.now().strftime("%Y-%m-%d")
+
+    # Get MACD
+    macd_url = f"https://api.polygon.io/v1/indicators/macd/{ticker}"
+    macd_params = {
+        "timespan": "day",
+        "short_window": 12,
+        "long_window": 26,
+        "signal_window": 9,
+        "series_type": "close",
+        "order": "desc",
+        "limit": 1,
+        "apiKey": POLYGON_API_KEY
     }
-
-    response = requests.get(url, headers=headers, params=params)
-    if response.status_code != 200:
-        raise ValueError(f"Error fetching insider trades: {response.status_code} - {response.text}")
+    
+    # Get RSI
+    rsi_url = f"https://api.polygon.io/v1/indicators/rsi/{ticker}"
+    rsi_params = {
+        "timespan": "day",
+        "window": 14,
+        "series_type": "close",
+        "order": "desc",
+        "limit": 1,
+        "apiKey": POLYGON_API_KEY
+    }
+    
+    # Get SMA
+    sma_url = f"https://api.polygon.io/v1/indicators/sma/{ticker}"
+    sma_params = {
+        "timespan": "day",
+        "window": 50,
+        "series_type": "close",
+        "order": "desc",
+        "limit": 1,
+        "apiKey": POLYGON_API_KEY
+    }
+    
+    # Get EMA
+    ema_url = f"https://api.polygon.io/v1/indicators/ema/{ticker}"
+    ema_params = {
+        "timespan": "day",
+        "window": 50,
+        "series_type": "close",
+        "order": "desc",
+        "limit": 1,
+        "apiKey": POLYGON_API_KEY
+    }
+    
+    # Make API calls
+    macd_response = requests.get(macd_url, params=macd_params)
+    rsi_response = requests.get(rsi_url, params=rsi_params)
+    sma_response = requests.get(sma_url, params=sma_params)
+    ema_response = requests.get(ema_url, params=ema_params)
+    
+    # Extract values
+    try:
+        macd_data = macd_response.json()["results"]["values"][0]
+        macd_value = {
+            "macd_line": macd_data.get("value", 0),
+            "signal_line": macd_data.get("signal", 0),
+            "histogram": macd_data.get("histogram", 0)
+        }
+    except:
+        macd_value = {"macd_line": 0, "signal_line": 0, "histogram": 0}
         
-    data = response.json()
-    results = data.get("results", [])
-
-    # Filter results by date range
-    start = datetime.strptime(start_date, '%Y-%m-%d')
-    end = datetime.strptime(end_date, '%Y-%m-%d')
-
-    # Transform Polygon data to match the expected format
-    insider_trades = []
-    for result in results:
-        filing_date = datetime.strptime(result.get("filing_date", "1970-01-01"), '%Y-%m-%d')
-        if start <= filing_date <= end:
-            insider_trades.append({
-                "filing_date": result.get("filing_date"),
-                "transaction_date": result.get("transaction_date"),
-                "insider_name": result.get("insider_name"),
-                "insider_title": result.get("insider_title"),
-                "transaction_type": result.get("transaction_type"),
-                "shares": result.get("shares", 0),
-                "share_price": result.get("share_price", 0),
-                "total_value": result.get("shares", 0) * result.get("share_price", 0)
-            })
-
-    return insider_trades
-
-
-def prices_to_df(prices):
-    """Convert prices to a DataFrame."""
-    if not prices:
-        # Return empty DataFrame with correct columns if no prices
-        return pd.DataFrame(columns=['date', 'open', 'high', 'low', 'close', 'volume'])
-    df = pd.DataFrame(prices)
-    df.set_index('date', inplace=True)
-    return df
+    try:
+        rsi_value = rsi_response.json()["results"]["values"][0].get("value", 0)
+    except:
+        rsi_value = 0
+        
+    try:
+        sma_value = sma_response.json()["results"]["values"][0].get("value", 0)
+    except:
+        sma_value = 0
+        
+    try:
+        ema_value = ema_response.json()["results"]["values"][0].get("value", 0)
+    except:
+        ema_value = 0
+    
+    return {
+        "macd": macd_value,
+        "rsi": rsi_value,
+        "sma": sma_value,
+        "ema": ema_value,
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }
 
 
 def calculate_macd(prices_df: pd.DataFrame, fast_period: int = 12, slow_period: int = 26, signal_period: int = 9) -> tuple:
@@ -402,21 +404,6 @@ def calculate_obv(prices_df: pd.DataFrame) -> pd.Series:
            (~prices_df['close'].diff().le(0) * 2 - 1)).cumsum()
     
     return obv
-
-
-def get_price_data(ticker, start_date, end_date, asset_type='crypto'):
-    """Get price data from Polygon API.
-    
-    Args:
-        ticker (str): The ticker symbol
-        start_date (str): Start date in YYYY-MM-DD format
-        end_date (str): End date in YYYY-MM-DD format
-        asset_type (str, optional): Type of asset ('crypto' or 'stock'). Defaults to 'crypto'.
-        
-    Returns:
-        pd.DataFrame: DataFrame with price data
-    """
-    return get_prices(ticker, start_date, end_date, asset_type=asset_type)
 
 
 def calculate_confidence_level(signals):
