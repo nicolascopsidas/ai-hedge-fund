@@ -1,0 +1,293 @@
+{
+  "symbol": "RUNE/USD",
+  "timestamp": "2024-12-24T18:00:35.646400+00:00",
+  "summary": {
+    "action": "Buy",
+    "confidence": 92,
+    "key_indicators": {
+      "rsi": 68,
+      "macd": "bullish",
+      "volume_trend": "rising",
+      "strongest_support": 5.422,
+      "strongest_resistance": 5.579
+    },
+    "reason": [
+      "RSI en hausse sur 1h, 4h et 1d",
+      "Convergence haussière MACD sur 30min, 1h et 4h",
+      "EMA rapide (9) au-dessus de l'EMA lente (50) sur 1h et 4h",
+      "Support solide confirmé à 5.422 sur plusieurs timeframes",
+      "Volume anormal détecté sur 15m avec augmentation de 50%"
+    ],
+    "multi_timeframe_analysis": {
+      "alignment": true,
+      "consistent_trend": "uptrend",
+      "strongest_support": 5.422,
+      "strongest_resistance": 5.579
+    }
+  },
+  "trade_suggestion": {
+    "action": "Buy",
+    "entry": 5.438,
+    "stop_loss": 5.35,
+    "take_profit": 5.7,
+    "risk_reward_ratio": 3.0
+  },
+  "btc_correlation": {
+    "short_term": 0.72,
+    "long_term": 0.9,
+    "weight": 0.8,
+    "summary": "Corrélation forte avec BTC sur le long terme, alignée avec sa tendance haussière."
+  },
+  "btc_summary": {
+    "trend": "uptrend",
+    "strength": 8,
+    "price_change_24h": 2.5,
+    "volume_trend": "rising",
+    "impact": "positive"
+  },
+  "timeframes": {
+    "5m": {
+      "trend": "neutral",
+      "strength": 1,
+      "price": {
+        "current": 5.445,
+        "historical": [5.44, 5.435, 5.43, 5.425, 5.445]
+      },
+      "ema": {
+        "ema_9": 5.44,
+        "ema_50": 5.435
+      },
+      "sma": {
+        "sma_20": 5.437,
+        "sma_50": 5.432
+      },
+      "rsi": {
+        "current": 48.07,
+        "evolution": -1.5,
+        "recent_values": [50.2, 49.6, 48.9, 48.4, 48.07]
+      },
+      "macd": {
+        "trend": "neutral",
+        "current_histogram": -0.002,
+        "evolution_histogram": -0.0005,
+        "recent_histogram": [-0.001, -0.0015, -0.0018, -0.0022, -0.002]
+      },
+      "volume": "falling",
+      "support": 5.422,
+      "resistance": 5.503,
+      "bollinger_bands": {
+        "width": 0.2,
+        "upper_band": 5.47,
+        "lower_band": 5.42
+      },
+      "atr": 0.005,
+      "patterns": {
+        "hammer": false,
+        "doji": false,
+        "engulfing_bullish": true,
+        "engulfing_bearish": false
+      }
+    },
+    "15m": {
+      "trend": "uptrend",
+      "strength": 3,
+      "price": {
+        "current": 5.447,
+        "historical": [5.43, 5.435, 5.44, 5.445, 5.447]
+      },
+      "ema": {
+        "ema_9": 5.445,
+        "ema_50": 5.438
+      },
+      "sma": {
+        "sma_20": 5.442,
+        "sma_50": 5.435
+      },
+      "rsi": {
+        "current": 54.07,
+        "evolution": 2.3,
+        "recent_values": [51.8, 52.9, 53.4, 53.9, 54.07]
+      },
+      "macd": {
+        "trend": "bullish",
+        "current_histogram": 0.004,
+        "evolution_histogram": 0.001,
+        "recent_histogram": [0.002, 0.0025, 0.003, 0.0035, 0.004]
+      },
+      "volume": "rising",
+      "support": 5.422,
+      "resistance": 5.503,
+      "bollinger_bands": {
+        "width": 0.25,
+        "upper_band": 5.49,
+        "lower_band": 5.43
+      },
+      "atr": 0.01,
+      "patterns": {
+        "hammer": false,
+        "doji": false,
+        "engulfing_bullish": true,
+        "engulfing_bearish": false
+      }
+    },
+    "1h": {
+      "trend": "uptrend",
+      "strength": 8,
+      "price": {
+        "current": 5.475,
+        "historical": [5.45, 5.46, 5.465, 5.47, 5.475]
+      },
+      "ema": {
+        "ema_9": 5.468,
+        "ema_50": 5.45
+      },
+      "sma": {
+        "sma_20": 5.46,
+        "sma_50": 5.44
+      },
+      "rsi": {
+        "current": 65.84,
+        "evolution": 3.0,
+        "recent_values": [62.5, 63.2, 64.1, 65.0, 65.84]
+      },
+      "macd": {
+        "trend": "bullish",
+        "current_histogram": 0.02,
+        "evolution_histogram": 0.003,
+        "recent_histogram": [0.015, 0.016, 0.018, 0.019, 0.02]
+      },
+      "bollinger_bands": {
+        "width": 0.3,
+        "upper_band": 5.56,
+        "lower_band": 5.4
+      },
+      "volume": "neutral",
+      "support": 5.422,
+      "resistance": 5.503,
+      "atr": 0.02,
+      "patterns": {
+        "hammer": false,
+        "doji": false,
+        "engulfing_bullish": true,
+        "engulfing_bearish": false
+      }
+    },
+    "4h": {
+      "trend": "uptrend",
+      "strength": 9,
+      "price": {
+        "current": 5.5,
+        "historical": [5.45, 5.46, 5.475, 5.49, 5.5]
+      },
+      "ema": {
+        "ema_9": 5.48,
+        "ema_50": 5.42
+      },
+      "sma": {
+        "sma_20": 5.45,
+        "sma_50": 5.4
+      },
+      "rsi": {
+        "current": 70.54,
+        "evolution": 1.2,
+        "recent_values": [69.1, 69.3, 69.7, 70.2, 70.54]
+      },
+      "macd": {
+        "trend": "bullish",
+        "current_histogram": 0.03,
+        "evolution_histogram": 0.001,
+        "recent_histogram": [0.028, 0.029, 0.03, 0.031, 0.032]
+      },
+      "atr": 0.04,
+      "volume": "rising",
+      "support": 5.422,
+      "resistance": 5.579,
+      "bollinger_bands": {
+        "width": 0.3,
+        "upper_band": 5.58,
+        "lower_band": 5.45
+      },
+      "patterns": {
+        "hammer": false,
+        "doji": false,
+        "engulfing_bullish": true,
+        "engulfing_bearish": false
+      }
+    },
+    "1d": {
+      "trend": "neutral",
+      "strength": 5,
+      "price": {
+        "current": 5.488,
+        "historical": [5.45, 5.46, 5.47, 5.48, 5.488]
+      },
+      "ema": {
+        "ema_9": 5.482,
+        "ema_50": 5.46
+      },
+      "sma": {
+        "sma_20": 5.47,
+        "sma_50": 5.44
+      },
+      "rsi": {
+        "current": 63.84,
+        "evolution": 0.5,
+        "recent_values": [63.2, 63.5, 63.8, 64.1, 63.84]
+      },
+      "macd": {
+        "trend": "neutral",
+        "current_histogram": 0.005,
+        "evolution_histogram": 0.001,
+        "recent_histogram": [0.003, 0.004, 0.005, 0.006, 0.007]
+      },
+      "volume": "neutral",
+      "support": 5.422,
+      "resistance": 5.503,
+      "atr": 0.05,
+      "patterns": {
+        "hammer": false,
+        "doji": false,
+        "engulfing_bullish": true,
+        "engulfing_bearish": false
+      }
+    }
+  },
+  "order_book": {
+    "buy_wall": {
+      "price": 5.4,
+      "volume": 10000
+    },
+    "sell_wall": {
+      "price": 5.6,
+      "volume": 8000
+    },
+    "liquidity": {
+      "bid": 15000,
+      "ask": 12000,
+      "depth_ratio": 1.25
+    }
+  },
+  "fundamentals": {
+    "interest_rate": 5.25,
+    "crypto_vix": 23,
+    "social_sentiment": {
+      "trend": "positive",
+      "score": 75,
+      "recent_mentions": 1542
+    },
+    "market_sentiment": {
+      "fear_greed_index": {
+        "current": 68,
+        "1d_evolution": 5
+      },
+      "trend": "greed"
+    },
+    "last_news": [
+      {
+        "source": "CNBC",
+        "title": "Rune Finance (RUNE) Price Hovers Near $5,000 as Trading Volume Soars",
+        "url": "https://www.cnbc.com/2024/12/24/rune-finance-rune-price-hovers-near-5-000-as-trading-volume-soars.html"
+      }
+    ]
+  }
+}

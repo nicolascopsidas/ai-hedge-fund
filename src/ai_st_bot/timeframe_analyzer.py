@@ -1,561 +1,547 @@
-from ai_st_data import AISTDataFetcher
+from datetime import datetime, timezone
+import json
+import numpy as np
 import pandas as pd
-from typing import Dict, List, Tuple
-from enum import Enum
+import sys
+from typing import Dict, List, Tuple, Optional
 
-class Trend(Enum):
-    STRONG_BULLISH = "strong_bullish"
-    BULLISH = "bullish"
-    NEUTRAL = "neutral"
-    BEARISH = "bearish"
-    STRONG_BEARISH = "strong_bearish"
+from ai_st_data import AISTDataFetcher
 
 class TimeframeAnalyzer:
+    """Analyze market data across multiple timeframes."""
+    
     def __init__(self):
         self.fetcher = AISTDataFetcher()
         
-        # Define optimal timeframe configurations
-        self.timeframe_configs = {
-            "5m": {
-                'timespan': "minute",
-                'multiplier': 5,
-                'rsi_period': 10,
-                'ema_period': 20,
-                'sma_period': 20,
-                'macd_fast': 8,
-                'macd_slow': 17,
-                'macd_signal': 9
-            },
-            "15m": {
-                'timespan': "minute",
-                'multiplier': 15,
-                'rsi_period': 14,
-                'ema_period': 35,
-                'sma_period': 35,
-                'macd_fast': 12,
-                'macd_slow': 26,
-                'macd_signal': 9
-            },
-            "1h": {
-                'timespan': "hour",
-                'multiplier': 1,
-                'rsi_period': 14,
-                'ema_period': 50,
-                'sma_period': 50,
-                'macd_fast': 12,
-                'macd_slow': 26,
-                'macd_signal': 9
-            },
-            "4h": {
-                'timespan': "hour",
-                'multiplier': 4,
-                'rsi_period': 14,
-                'ema_period': 50,
-                'sma_period': 50,
-                'macd_fast': 12,
-                'macd_slow': 26,
-                'macd_signal': 9
-            },
-            "1d": {
-                'timespan': "day",
-                'multiplier': 1,
-                'rsi_period': 21,
-                'ema_period': 100,
-                'sma_period': 100,
-                'macd_fast': 19,
-                'macd_slow': 39,
-                'macd_signal': 9
+    def _calculate_volatility(self, high: float, low: float) -> Tuple[str, float]:
+        """Calculate volatility level and percentage."""
+        volatility = (high - low) / low * 100
+        
+        if volatility < 0.5:
+            return "low", volatility
+        elif volatility < 2.0:
+            return "medium", volatility
+        else:
+            return "high", volatility
+            
+    def _get_trend_strength(self, rsi: float, macd_hist: float, ema_align: str) -> str:
+        """Calculate trend strength based on indicators."""
+        strength = 0
+        
+        # RSI contribution
+        if 30 <= rsi <= 70:
+            strength += 0
+        elif (rsi < 30 and macd_hist > 0) or (rsi > 70 and macd_hist < 0):
+            strength += 1
+        else:
+            strength -= 1
+            
+        # MACD contribution
+        if abs(macd_hist) > 0.01:
+            strength += 1 if macd_hist > 0 else -1
+            
+        # EMA contribution
+        if ema_align == "bullish":
+            strength += 1
+        elif ema_align == "bearish":
+            strength -= 1
+            
+        if strength >= 2:
+            return "strong_bullish"
+        elif strength == 1:
+            return "bullish"
+        elif strength == 0:
+            return "neutral"
+        elif strength == -1:
+            return "bearish"
+        else:
+            return "strong_bearish"
+            
+    def _get_confidence_level(self, aligned_indicators: List[str]) -> str:
+        """Calculate confidence level based on aligned indicators."""
+        if len(aligned_indicators) >= 3:
+            return "high"
+        elif len(aligned_indicators) == 2:
+            return "medium"
+        else:
+            return "low"
+            
+    def _get_rsi_trend(self, rsi: float) -> str:
+        """Determine RSI trend."""
+        if rsi < 30:
+            return "strongly_oversold"
+        elif rsi < 40:
+            return "oversold"
+        elif rsi > 70:
+            return "strongly_overbought"
+        elif rsi > 60:
+            return "overbought"
+        else:
+            return "neutral"
+            
+    def _analyze_macd(self, macd_data: Dict) -> Dict:
+        """Analyze MACD indicator with better trend detection."""
+        if not isinstance(macd_data, dict):
+            return {
+                "trend": {
+                    "value": "neutral",
+                    "description": "Tendance du MACD"
+                },
+                "current_histogram": {
+                    "value": 0,
+                    "description": "Valeur actuelle de l'histogramme MACD"
+                },
+                "evolution_histogram": {
+                    "value": 0,
+                    "description": "Evolution de l'histogramme du MACD"
+                },
+                "recent_histogram": {
+                    "values": [0] * 5,
+                    "description": "Valeurs recentes de l'histogramme MACD"
+                }
             }
-        }
-    
-    def calculate_confidence(self, signals: List[Tuple[str, float]], indicators: Dict, timeframe: str) -> float:
-        """Calculate confidence score based on multiple factors.
-        
-        Args:
-            signals: List of (indicator_name, signal_value) tuples
-            indicators: Dictionary of indicator data
-            timeframe: Current timeframe being analyzed
-            
-        Returns:
-            Confidence score (0-100)
-        """
-        weights = {
-            'signal_agreement': 0.4,
-            'signal_strength': 0.3,
-            'trend_consistency': 0.3
-        }
-        
-        scores = {}
-        
-        # 1. Signal Agreement Score
-        signal_values = [s[1] for s in signals]
-        if signal_values:
-            max_diff = max(signal_values) - min(signal_values)
-            scores['signal_agreement'] = (1 - max_diff/2) * 100
-        else:
-            scores['signal_agreement'] = 0
-            
-        # 2. Signal Strength Score
-        if signal_values:
-            # Convert signal values to absolute strength
-            abs_strengths = [abs(v) for v in signal_values]
-            avg_strength = sum(abs_strengths) / len(abs_strengths)
-            scores['signal_strength'] = avg_strength * 100
-        else:
-            scores['signal_strength'] = 0
-            
-        # 3. Trend Consistency Score
-        trend_score = 0
-        count = 0
-        
-        # Check EMA trend consistency
-        if 'ema' in indicators and not indicators['ema'].empty:
-            ema_values = indicators['ema']['value']
-            if len(ema_values) >= 3:
-                # Calculate consecutive moves in same direction
-                moves = [1 if ema_values.iloc[i] > ema_values.iloc[i+1] else -1 
-                        for i in range(len(ema_values)-1)]
-                consistency = sum(1 for i in range(len(moves)-1) 
-                                if moves[i] == moves[i+1]) / (len(moves)-1)
-                trend_score += consistency * 100
-                count += 1
-        
-        # Check RSI trend consistency
-        if 'rsi' in indicators and not indicators['rsi'].empty:
-            rsi_values = indicators['rsi']['value']
-            if len(rsi_values) >= 3:
-                moves = [1 if rsi_values.iloc[i] > rsi_values.iloc[i+1] else -1 
-                        for i in range(len(rsi_values)-1)]
-                consistency = sum(1 for i in range(len(moves)-1) 
-                                if moves[i] == moves[i+1]) / (len(moves)-1)
-                trend_score += consistency * 100
-                count += 1
-        
-        # Check SMA trend consistency
-        if 'sma' in indicators and not indicators['sma'].empty:
-            sma_values = indicators['sma']['value']
-            if len(sma_values) >= 3:
-                moves = [1 if sma_values.iloc[i] > sma_values.iloc[i+1] else -1 
-                        for i in range(len(sma_values)-1)]
-                consistency = sum(1 for i in range(len(moves)-1) 
-                                if moves[i] == moves[i+1]) / (len(moves)-1)
-                trend_score += consistency * 100
-                count += 1
-        
-        scores['trend_consistency'] = trend_score / max(1, count)
-        
-        # Calculate weighted average
-        final_confidence = sum(scores[k] * weights[k] for k in weights)
-        
-        return min(100, max(0, final_confidence))
 
-    def analyze_trend_strength(self, indicators: Dict, timeframe: str) -> Dict:
-        """Analyze trend strength using multiple indicators.
+        # Get histogram values
+        histogram_data = macd_data.get('histogram', pd.Series([]))
+        if isinstance(histogram_data, pd.Series) and not histogram_data.empty:
+            recent_values = histogram_data.iloc[-5:].tolist() if len(histogram_data) >= 5 else [histogram_data.iloc[-1]] * 5
+            current_value = histogram_data.iloc[-1]
+            evolution = current_value - histogram_data.iloc[-2] if len(histogram_data) > 1 else 0
+        else:
+            recent_values = [0] * 5
+            current_value = 0
+            evolution = 0
+
+        # Determine trend
+        if current_value > 0:
+            trend = "bullish"
+            strength = "strong" if evolution > 0 else "weak"
+        elif current_value < 0:
+            trend = "bearish"
+            strength = "strong" if evolution < 0 else "weak"
+        else:
+            trend = "neutral"
+            strength = "weak"
+
+        return {
+            "trend": {
+                "value": trend,
+                "description": "Tendance du MACD"
+            },
+            "current_histogram": {
+                "value": round(current_value, 5),
+                "description": "Valeur actuelle de l'histogramme MACD"
+            },
+            "evolution_histogram": {
+                "value": round(evolution, 5),
+                "description": "Evolution de l'histogramme du MACD"
+            },
+            "recent_histogram": {
+                "values": [round(x, 5) for x in recent_values],
+                "description": "Valeurs recentes de l'histogramme MACD"
+            },
+            "strength": strength
+        }
+
+    def analyze_timeframe(self, ticker: str, timeframe: str) -> dict:
+        """Analyze a specific timeframe."""
+        config = {
+            "5m": {"timespan": "minute", "multiplier": 5},
+            "15m": {"timespan": "minute", "multiplier": 15},
+            "1h": {"timespan": "hour", "multiplier": 1},
+            "4h": {"timespan": "hour", "multiplier": 4},
+            "1d": {"timespan": "day", "multiplier": 1}
+        }[timeframe]
         
-        Args:
-            indicators: Dictionary containing indicator data
-            timeframe: Timeframe being analyzed
+        price_data, indicators = self.fetcher.get_market_data(ticker, config['timespan'], config['multiplier'])
+        
+        if price_data.empty or not indicators:
+            return None
             
-        Returns:
-            Dictionary containing trend analysis
-        """
-        strength = {
-            'trend': Trend.NEUTRAL,
-            'strength': 0,  # 0 to 100
-            'confidence': 0  # 0 to 100
+        latest_price = price_data['close'].iloc[-1]
+        high = price_data['high'].max()
+        low = price_data['low'].min()
+        
+        volatility_level, volatility_pct = self._calculate_volatility(high, low)
+        
+        # Get RSI and trend
+        rsi_data = indicators.get('rsi', {}).get('value')
+        if isinstance(rsi_data, pd.Series) and not rsi_data.empty:
+            rsi = rsi_data.iloc[-1]
+            rsi_values = rsi_data.iloc[-5:].tolist()  # Prendre les 5 dernières valeurs
+            rsi_evolution = rsi - rsi_data.iloc[-2] if len(rsi_data) > 1 else 0
+        else:
+            rsi = 50  # Valeur neutre par défaut
+            rsi_values = [50] * 5
+            rsi_evolution = 0
+        
+        rsi_trend = self._get_rsi_trend(rsi)
+        
+        # Get MACD with improved analysis
+        macd_analysis = self._analyze_macd(indicators.get('macd', {}))
+        
+        # Get EMAs and alignment
+        ema20_data = indicators.get('ema20', {}).get('value')
+        ema50_data = indicators.get('ema50', {}).get('value')
+        
+        ema_20 = ema20_data.iloc[-1] if isinstance(ema20_data, pd.Series) and not ema20_data.empty else latest_price
+        ema_50 = ema50_data.iloc[-1] if isinstance(ema50_data, pd.Series) and not ema50_data.empty else latest_price
+        ema_align = "bullish" if ema_20 > ema_50 else "bearish"
+
+        # Get SMAs
+        sma20_data = indicators.get('sma20', {}).get('value')
+        sma50_data = indicators.get('sma50', {}).get('value')
+        
+        sma_20 = sma20_data.iloc[-1] if isinstance(sma20_data, pd.Series) and not sma20_data.empty else latest_price
+        sma_50 = sma50_data.iloc[-1] if isinstance(sma50_data, pd.Series) and not sma50_data.empty else latest_price
+        
+        trend = self._get_trend_strength(rsi, macd_analysis["current_histogram"]["value"], ema_align)
+        
+        # Récupérer et formater les 5 derniers prix de clôture avec leurs timestamps
+        historical_data = price_data['close'].iloc[-5:]
+        historical_prices = [
+            {
+                "timestamp": index.strftime("%Y-%m-%dT%H:%M:%S"),
+                "value": round(float(value), 6)
+            } for index, value in historical_data.items()
+        ]
+        
+        # S'assurer que latest_price est le dernier prix
+        if historical_prices:
+            historical_prices[-1]["value"] = round(float(latest_price), 6)
+
+        # Calcul des données de volume
+        current_volume = float(price_data['volume'].iloc[-1])
+        avg_volume = float(price_data['volume'].rolling(window=5).mean().iloc[-1])
+        volume_trend = "increasing" if current_volume > avg_volume else "decreasing"
+        
+        # Récupération du VWAP
+        current_vwap = float(price_data['vwap'].iloc[-1]) if 'vwap' in price_data else None
+
+        # Récupérer les valeurs RSI avec timestamps
+        rsi_data = indicators.get('rsi', {}).get('value')
+        rsi_values = [
+            {
+                "timestamp": index.strftime("%Y-%m-%dT%H:%M:%S"),
+                "value": round(float(value), 2)
+            } for index, value in rsi_data.iloc[-5:].items()
+        ]
+
+        # Récupérer les valeurs MACD avec timestamps
+        macd_hist_data = macd_analysis["recent_histogram"]["values"]
+        macd_hist_timestamps = price_data.index[-5:]
+        macd_hist_values = [
+            {
+                "timestamp": ts.strftime("%Y-%m-%dT%H:%M:%S"),
+                "value": round(float(val), 5)
+            } for ts, val in zip(macd_hist_timestamps, macd_hist_data)
+        ]
+
+        return {
+            "timeframe": timeframe,
+            "price": {
+                "current": {
+                    "timestamp": price_data.index[-1].strftime("%Y-%m-%dT%H:%M:%S"),
+                    "value": round(float(latest_price), 6),
+                    "description": "Prix actuel de l'actif"
+                },
+                "historical": {
+                    "data": historical_prices,
+                    "description": "Prix historique sur les dernieres periodes (du plus ancien au plus recent)"
+                }
+            },
+            "volume": {
+                "current": round(current_volume, 2),
+                "average": round(avg_volume, 2),
+                "trend": volume_trend,
+                "vwap": round(current_vwap, 6) if current_vwap else None
+            },
+            "trend": trend,
+            "indicators": {
+                "RSI": {
+                    "current": {
+                        "timestamp": price_data.index[-1].strftime("%Y-%m-%dT%H:%M:%S"),
+                        "value": round(rsi, 2),
+                        "description": "Relative Strength Index (RSI) actuel"
+                    },
+                    "evolution": {
+                        "value": round(rsi_evolution, 2),
+                        "description": "Evolution du RSI par rapport a la periode precedente"
+                    },
+                    "recent_values": {
+                        "data": rsi_values,
+                        "description": "Valeurs recentes du RSI sur differentes periodes"
+                    },
+                    "trend": rsi_trend
+                },
+                "MACD": {
+                    "trend": macd_analysis["trend"],
+                    "current_histogram": {
+                        "timestamp": price_data.index[-1].strftime("%Y-%m-%dT%H:%M:%S"),
+                        "value": macd_analysis["current_histogram"]["value"],
+                        "description": "Valeur actuelle de l'histogramme MACD"
+                    },
+                    "evolution_histogram": {
+                        "value": macd_analysis["evolution_histogram"]["value"],
+                        "description": "Evolution de l'histogramme du MACD"
+                    },
+                    "recent_histogram": {
+                        "data": macd_hist_values,
+                        "description": "Valeurs recentes de l'histogramme MACD"
+                    },
+                    "strength": macd_analysis["strength"]
+                },
+                "EMA": {
+                    "ema_20": {
+                        "value": round(ema_20, 2),
+                        "description": "Exponential Moving Average (EMA) sur 20 periodes"
+                    },
+                    "ema_50": {
+                        "value": round(ema_50, 2),
+                        "description": "Exponential Moving Average (EMA) sur 50 periodes"
+                    },
+                    "trend": ema_align,
+                    "description": f"Tendance de l'EMA : {'haussiere' if ema_align == 'bullish' else 'baissiere'}"
+                },
+                "SMA": {
+                    "sma_20": {
+                        "value": round(sma_20, 2),
+                        "description": "Simple Moving Average (SMA) sur 20 periodes"
+                    },
+                    "sma_50": {
+                        "value": round(sma_50, 2),
+                        "description": "Simple Moving Average (SMA) sur 50 periodes"
+                    }
+                }
+            },
+            "volatility": volatility_level
+        }
+
+    def _identify_confluence_zones(self, timeframes_data: Dict) -> Dict:
+        """Identify high and low confidence confluence zones."""
+        zones = {
+            "high_confidence": [],
+            "low_confidence": []
         }
         
-        signals = []
-        
-        # Analyze RSI
-        if 'rsi' in indicators and not indicators['rsi'].empty:
-            rsi = indicators['rsi']['value'].iloc[0]
-            if rsi > 70:
-                signals.append(('rsi', 1.0))  # Strong bullish
-            elif rsi > 60:
-                signals.append(('rsi', 0.5))  # Moderate bullish
-            elif rsi < 30:
-                signals.append(('rsi', -1.0))  # Strong bearish
-            elif rsi < 40:
-                signals.append(('rsi', -0.5))  # Moderate bearish
-            else:
-                signals.append(('rsi', 0))  # Neutral
-        
-        # Analyze MACD
-        if 'macd' in indicators and not indicators['macd'].empty:
-            macd_data = indicators['macd'].iloc[0]
-            histogram = macd_data['histogram']
-            signal = macd_data['signal']
-            value = macd_data['value']
-            
-            # MACD Line crossing
-            if value > signal:
-                signals.append(('macd_cross', 0.5))
-            else:
-                signals.append(('macd_cross', -0.5))
-            
-            # MACD Histogram
-            if histogram > 0 and histogram > indicators['macd']['histogram'].iloc[1]:
-                signals.append(('macd_hist', 1.0))  # Strong bullish
-            elif histogram > 0:
-                signals.append(('macd_hist', 0.5))  # Moderate bullish
-            elif histogram < 0 and histogram < indicators['macd']['histogram'].iloc[1]:
-                signals.append(('macd_hist', -1.0))  # Strong bearish
-            elif histogram < 0:
-                signals.append(('macd_hist', -0.5))  # Moderate bearish
-        
-        # Analyze Moving Averages (EMA and SMA)
-        if 'ema' in indicators and 'sma' in indicators and not indicators['ema'].empty and not indicators['sma'].empty:
-            ema_values = indicators['ema']['value']
-            sma_values = indicators['sma']['value']
-            
-            if len(ema_values) >= 3 and len(sma_values) >= 3:
-                # Calculate trends
-                ema_trend = (ema_values.iloc[0] - ema_values.iloc[2]) / ema_values.iloc[2] * 100
-                sma_trend = (sma_values.iloc[0] - sma_values.iloc[2]) / sma_values.iloc[2] * 100
+        # Group similar price levels across timeframes
+        price_levels = []
+        for tf, data in timeframes_data.items():
+            if data is None:
+                continue
                 
-                # EMA signals
-                if ema_trend > 1:
-                    signals.append(('ema', 1.0))  # Strong bullish
-                elif ema_trend > 0.2:
-                    signals.append(('ema', 0.5))  # Moderate bullish
-                elif ema_trend < -1:
-                    signals.append(('ema', -1.0))  # Strong bearish
-                elif ema_trend < -0.2:
-                    signals.append(('ema', -0.5))  # Moderate bearish
-                else:
-                    signals.append(('ema', 0))  # Neutral
-                
-                # SMA signals
-                if sma_trend > 1:
-                    signals.append(('sma', 1.0))  # Strong bullish
-                elif sma_trend > 0.2:
-                    signals.append(('sma', 0.5))  # Moderate bullish
-                elif sma_trend < -1:
-                    signals.append(('sma', -1.0))  # Strong bearish
-                elif sma_trend < -0.2:
-                    signals.append(('sma', -0.5))  # Moderate bearish
-                else:
-                    signals.append(('sma', 0))  # Neutral
-                
-                # MA Cross signals
-                if ema_values.iloc[0] > sma_values.iloc[0] and ema_values.iloc[1] <= sma_values.iloc[1]:
-                    signals.append(('ma_cross', 1.0))  # Golden cross
-                elif ema_values.iloc[0] < sma_values.iloc[0] and ema_values.iloc[1] >= sma_values.iloc[1]:
-                    signals.append(('ma_cross', -1.0))  # Death cross
-                elif ema_values.iloc[0] > sma_values.iloc[0]:
-                    signals.append(('ma_cross', 0.5))  # Bullish alignment
-                else:
-                    signals.append(('ma_cross', -0.5))  # Bearish alignment
-        
-        # Calculate overall strength
-        if signals:
-            total_strength = sum(signal[1] for signal in signals)
-            avg_strength = total_strength / len(signals)
+            price = data["price"]["current"]["value"]
+            ema20 = data["indicators"]["EMA"]["ema_20"]["value"]
+            ema50 = data["indicators"]["EMA"]["ema_50"]["value"]
             
-            # Convert to 0-100 scale
-            strength['strength'] = (avg_strength + 1) * 50
+            price_levels.extend([
+                (price, f"Price ({tf})", data["indicators"]),
+                (ema20, f"EMA20 ({tf})", data["indicators"]),
+                (ema50, f"EMA50 ({tf})", data["indicators"])
+            ])
             
-            # Determine trend
-            if avg_strength > 0.6:
-                strength['trend'] = Trend.STRONG_BULLISH
-            elif avg_strength > 0.2:
-                strength['trend'] = Trend.BULLISH
-            elif avg_strength < -0.6:
-                strength['trend'] = Trend.STRONG_BEARISH
-            elif avg_strength < -0.2:
-                strength['trend'] = Trend.BEARISH
+        # Group close price levels (within 0.5%)
+        grouped_levels = {}
+        for price, label, indicators in sorted(price_levels):
+            found_group = False
+            for base_price in grouped_levels.keys():
+                if abs(price - base_price) / base_price < 0.005:
+                    grouped_levels[base_price].append((label, indicators))
+                    found_group = True
+                    break
+            if not found_group:
+                grouped_levels[price] = [(label, indicators)]
+                
+        # Classify zones based on indicator alignment
+        for price, alignments in grouped_levels.items():
+            if len(alignments) < 2:
+                continue
+                
+            aligned_indicators = []
+            for label, indicators in alignments:
+                rsi = indicators["RSI"]
+                macd = indicators["MACD"]
+                ema = indicators["EMA"]
+                
+                if rsi["trend"].endswith("oversold"):
+                    aligned_indicators.append(f"{label} RSI oversold")
+                elif rsi["trend"].endswith("overbought"):
+                    aligned_indicators.append(f"{label} RSI overbought")
+                    
+                if macd["trend"]["value"] == "bullish":
+                    aligned_indicators.append(f"{label} MACD bullish")
+                elif macd["trend"]["value"] == "bearish":
+                    aligned_indicators.append(f"{label} MACD bearish")
+                    
+                if ema["trend"] == "bullish":
+                    aligned_indicators.append(f"{label} EMA bullish")
+                elif ema["trend"] == "bearish":
+                    aligned_indicators.append(f"{label} EMA bearish")
+                    
+            zone = {
+                "range": [round(price * 0.998, 2), round(price * 1.002, 2)],
+                "aligned_indicators": aligned_indicators
+            }
+            
+            if len(aligned_indicators) >= 3:
+                zones["high_confidence"].append(zone)
             else:
-                strength['trend'] = Trend.NEUTRAL
-            
-            # Calculate confidence using new method
-            strength['confidence'] = self.calculate_confidence(signals, indicators, timeframe)
+                zones["low_confidence"].append(zone)
+                
+        return zones
         
-        return strength
-    
-    def analyze_timeframes(self, ticker: str) -> Dict:
-        """Analyze multiple timeframes and their relationships."""
-        results = {}
+    def _generate_trade_suggestion(self, timeframes_data: Dict, confluence_zones: Dict) -> Dict:
+        """Generate trade suggestion based on analysis."""
+        # Check if we have enough data
+        if not timeframes_data or not confluence_zones:
+            return {
+                "action": "Wait",
+                "entry": None,
+                "stop_loss": None,
+                "take_profit": None,
+                "reason": "Insufficient data for trade suggestion"
+            }
+            
+        # Look for strong setups in high confidence zones
+        high_conf_zones = confluence_zones.get("high_confidence", [])
+        if high_conf_zones:
+            zone = high_conf_zones[0]  # Take the first high confidence zone
+            
+            # Determine if it's a buy or sell setup
+            bullish_signals = sum(1 for i in zone["aligned_indicators"] if "bullish" in i.lower())
+            bearish_signals = sum(1 for i in zone["aligned_indicators"] if "bearish" in i.lower())
+            
+            if abs(bullish_signals - bearish_signals) >= 2:  # Strong directional bias
+                action = "Buy" if bullish_signals > bearish_signals else "Sell"
+                entry = sum(zone["range"]) / 2  # Middle of the zone
+                
+                # Calculate stop loss and take profit
+                volatility = max(v["volatility"] for v in timeframes_data.values() if v)
+                risk_pct = 0.02 if volatility == "low" else 0.03 if volatility == "medium" else 0.05
+                
+                if action == "Buy":
+                    stop_loss = round(entry * (1 - risk_pct), 4)
+                    take_profit = round(entry * (1 + risk_pct * 3), 4)  # 3:1 reward ratio
+                else:
+                    stop_loss = round(entry * (1 + risk_pct), 4)
+                    take_profit = round(entry * (1 - risk_pct * 3), 4)
+                    
+                return {
+                    "action": action,
+                    "entry": entry,
+                    "stop_loss": stop_loss,
+                    "take_profit": take_profit,
+                    "reason": f"Strong {action.lower()} setup in high confidence zone with multiple aligned indicators"
+                }
+                
+        # No clear setup found
+        return {
+            "action": "Wait",
+            "entry": None,
+            "stop_loss": None,
+            "take_profit": None,
+            "reason": "No clear confluence across timeframes; wait for confirmation"
+        }
+        
+    def analyze_all(self, symbol: str) -> dict:
+        """Analyze all timeframes and generate complete analysis."""
+        timeframes = ["5m", "15m", "1h", "4h", "1d"]  
+        timeframes_data = {}
         
         # Analyze each timeframe
-        for tf_label, config in self.timeframe_configs.items():
-            indicators = self.fetcher.get_indicators(
-                ticker,
-                timespan=config['timespan'],
-                multiplier=config['multiplier'],
-                limit=10,
-                rsi_period=config['rsi_period'],
-                ema_period=config['ema_period'],
-                sma_period=config['sma_period'],
-                macd_fast=config['macd_fast'],
-                macd_slow=config['macd_slow'],
-                macd_signal=config['macd_signal']
-            )
+        for timeframe in timeframes:
+            timeframes_data[timeframe] = self.analyze_timeframe(symbol, timeframe)
             
-            results[tf_label] = {
-                'indicators': indicators,
-                'analysis': self.analyze_trend_strength(indicators, tf_label)
+        # Skip if we don't have enough data
+        if not any(timeframes_data.values()):
+            return {
+                "symbol": symbol,
+                "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S"),
+                "error": "Insufficient data for analysis"
             }
+            
+        # Identify confluence zones
+        confluence_zones = self._identify_confluence_zones(timeframes_data)
         
-        return results
-    
-    def get_market_structure(self, results: Dict) -> Dict:
-        """Analyze market structure using multiple timeframe analysis."""
-        structure = {
-            'primary_trend': None,
-            'secondary_trend': None,
-            'entry_trend': None,
-            'confluence_level': 0,
-            'trading_bias': Trend.NEUTRAL,
-            'confidence': 0
+        # Generate trade suggestion
+        trade_suggestion = self._generate_trade_suggestion(timeframes_data, confluence_zones)
+        
+        # Calculate overall market bias and confidence
+        trends = [data["trend"] for data in timeframes_data.values() if data]
+        bias = max(set(trends), key=trends.count) if trends else "neutral"
+        
+        # Calculate confidence level
+        confidence = self._get_confidence_level(
+            sum((z.get("aligned_indicators", []) for z in confluence_zones.get("high_confidence", [])), [])
+        )
+        
+        # Calculate overall volatility
+        volatilities = [data["volatility"] for data in timeframes_data.values() if data]
+        overall_volatility = max(set(volatilities), key=volatilities.count) if volatilities else "low"
+        
+        # Determine trade readiness
+        if trade_suggestion["action"] == "Wait":
+            trade_readiness = "Awaiting confirmation"
+        else:
+            trade_readiness = f"Ready to {trade_suggestion['action'].lower()}"
+            
+        # Find critical levels from confluence zones
+        critical_levels = {
+            "buy_zone": None,
+            "sell_zone": None
         }
         
-        # Primary trend (4h)
-        if '4h' in results:
-            structure['primary_trend'] = results['4h']['analysis']['trend']
-        
-        # Secondary trend (1h)
-        if '1h' in results:
-            structure['secondary_trend'] = results['1h']['analysis']['trend']
-        
-        # Entry trend (15m)
-        if '15m' in results:
-            structure['entry_trend'] = results['15m']['analysis']['trend']
-        
-        # Calculate confluence
-        trends = [
-            results[tf]['analysis']['trend'] 
-            for tf in ['4h', '1h', '15m'] 
-            if tf in results
-        ]
-        
-        bullish_count = sum(1 for t in trends if t in [Trend.BULLISH, Trend.STRONG_BULLISH])
-        bearish_count = sum(1 for t in trends if t in [Trend.BEARISH, Trend.STRONG_BEARISH])
-        
-        # Calculate confluence level (0-100)
-        max_count = max(bullish_count, bearish_count)
-        structure['confluence_level'] = (max_count / len(trends)) * 100
-        
-        # Determine overall bias
-        if bullish_count > bearish_count:
-            structure['trading_bias'] = Trend.BULLISH
-        elif bearish_count > bullish_count:
-            structure['trading_bias'] = Trend.BEARISH
-        else:
-            structure['trading_bias'] = Trend.NEUTRAL
-        
-        # Calculate overall confidence
-        confidences = [
-            results[tf]['analysis']['confidence']
-            for tf in ['4h', '1h', '15m']
-            if tf in results
-        ]
-        structure['confidence'] = sum(confidences) / len(confidences)
-        
-        return structure
+        if confluence_zones["high_confidence"]:
+            for zone in confluence_zones["high_confidence"]:
+                if any("bullish" in i.lower() for i in zone["aligned_indicators"]):
+                    critical_levels["buy_zone"] = zone["range"]
+                if any("bearish" in i.lower() for i in zone["aligned_indicators"]):
+                    critical_levels["sell_zone"] = zone["range"]
+                    
+        # Format the final output
+        return {
+            "symbol": symbol,
+            "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S"),
+            "summary": {
+                "bias": bias,
+                "confidence_level": confidence,
+                "volatility": overall_volatility,
+                "trade_readiness": trade_readiness,
+                "critical_levels": critical_levels
+            },
+            "timeframes": timeframes_data,
+            "confluence_zones": {
+                "high_confidence": next(iter(confluence_zones["high_confidence"]), {}) if confluence_zones["high_confidence"] else {}
+            },
+            "suggested_trade": {
+                "action": trade_suggestion["action"],
+                "entry": trade_suggestion["entry"],
+                "stop_loss": trade_suggestion["stop_loss"],
+                "take_profit": trade_suggestion["take_profit"],
+                "risk_reward": round(abs(trade_suggestion["take_profit"] - trade_suggestion["entry"]) / 
+                                  abs(trade_suggestion["stop_loss"] - trade_suggestion["entry"]), 1) 
+                                  if all(x is not None for x in [trade_suggestion["entry"], 
+                                                               trade_suggestion["stop_loss"], 
+                                                               trade_suggestion["take_profit"]]) else None
+            }
+        }
 
 def main():
+    """Main function to run the analyzer."""
+    if len(sys.argv) != 2:
+        print("Usage: python timeframe_analyzer.py <symbol>")
+        sys.exit(1)
+        
+    symbol = sys.argv[1]
+    # Add /USD only if not already present
+    if not symbol.endswith("/USD"):
+        symbol = f"{symbol}/USD"
+        
     analyzer = TimeframeAnalyzer()
+    analysis = analyzer.analyze_all(symbol)
     
-    print("Analyzing BTC market structure...")
-    results = analyzer.analyze_timeframes("BTC")
-    
-    # Print detailed analysis for each timeframe
-    for timeframe, data in results.items():
-        print(f"\n{timeframe} Analysis:")
-        print("=" * 50)
-        analysis = data['analysis']
-        
-        # Print trend and overall metrics
-        print(f"Overall Trend: {analysis['trend'].value}")
-        print(f"Trend Strength: {analysis['strength']:.1f}")
-        print(f"Final Confidence: {analysis['confidence']:.1f}%")
-        
-        # Print individual indicators
-        print("\nIndicator Signals:")
-        print("-" * 30)
-        
-        # RSI Analysis
-        if 'rsi' in data['indicators']:
-            rsi_value = data['indicators']['rsi']['value'].iloc[0]
-            print(f"RSI:")
-            print(f"  Current Value: {rsi_value:.1f}")
-            print(f"  Interpretation: ", end="")
-            if rsi_value > 70: print("Strongly Overbought")
-            elif rsi_value > 60: print("Overbought")
-            elif rsi_value < 30: print("Strongly Oversold")
-            elif rsi_value < 40: print("Oversold")
-            else: print("Neutral")
-        
-        # MACD Analysis
-        if 'macd' in data['indicators']:
-            macd_data = data['indicators']['macd'].iloc[0]
-            print(f"\nMACD:")
-            print(f"  MACD Line: {macd_data['value']:.4f}")
-            print(f"  Signal Line: {macd_data['signal']:.4f}")
-            print(f"  Histogram: {macd_data['histogram']:.4f}")
-            print(f"  Signal: {'Bullish' if macd_data['value'] > macd_data['signal'] else 'Bearish'}")
-        
-        # Moving Averages Analysis
-        if 'ema' in data['indicators'] and 'sma' in data['indicators']:
-            ema_values = data['indicators']['ema']['value']
-            sma_values = data['indicators']['sma']['value']
-            if len(ema_values) >= 3 and len(sma_values) >= 3:
-                ema_trend = (ema_values.iloc[0] - ema_values.iloc[2]) / ema_values.iloc[2] * 100
-                sma_trend = (sma_values.iloc[0] - sma_values.iloc[2]) / sma_values.iloc[2] * 100
-                
-                print(f"\nMoving Averages:")
-                print(f"  EMA Current: {ema_values.iloc[0]:.2f}")
-                print(f"  EMA Previous: {ema_values.iloc[1]:.2f}")
-                print(f"  EMA Trend: {ema_trend:.2f}%")
-                print(f"  SMA Current: {sma_values.iloc[0]:.2f}")
-                print(f"  SMA Previous: {sma_values.iloc[1]:.2f}")
-                print(f"  SMA Trend: {sma_trend:.2f}%")
-                
-                # MA Cross Analysis
-                print("  MA Cross Status: ", end="")
-                if ema_values.iloc[0] > sma_values.iloc[0] and ema_values.iloc[1] <= sma_values.iloc[1]:
-                    print("Golden Cross (Bullish)")
-                elif ema_values.iloc[0] < sma_values.iloc[0] and ema_values.iloc[1] >= sma_values.iloc[1]:
-                    print("Death Cross (Bearish)")
-                elif ema_values.iloc[0] > sma_values.iloc[0]:
-                    print("Bullish Alignment")
-                else:
-                    print("Bearish Alignment")
-        
-        # Print confidence breakdown
-        print("\nConfidence Breakdown:")
-        print("-" * 30)
-        signals = []
-        if 'rsi' in data['indicators']:
-            rsi = data['indicators']['rsi']['value'].iloc[0]
-            if rsi > 70: signals.append(('rsi', 1.0))
-            elif rsi > 60: signals.append(('rsi', 0.5))
-            elif rsi < 30: signals.append(('rsi', -1.0))
-            elif rsi < 40: signals.append(('rsi', -0.5))
-            else: signals.append(('rsi', 0))
-            
-        if 'macd' in data['indicators']:
-            macd_data = data['indicators']['macd'].iloc[0]
-            if macd_data['value'] > macd_data['signal']:
-                signals.append(('macd_cross', 0.5))
-            else:
-                signals.append(('macd_cross', -0.5))
-            
-            if macd_data['histogram'] > 0:
-                if macd_data['histogram'] > data['indicators']['macd']['histogram'].iloc[1]:
-                    signals.append(('macd_hist', 1.0))
-                else:
-                    signals.append(('macd_hist', 0.5))
-            else:
-                if macd_data['histogram'] < data['indicators']['macd']['histogram'].iloc[1]:
-                    signals.append(('macd_hist', -1.0))
-                else:
-                    signals.append(('macd_hist', -0.5))
-        
-        if 'ema' in data['indicators'] and 'sma' in data['indicators']:
-            ema_values = data['indicators']['ema']['value']
-            sma_values = data['indicators']['sma']['value']
-            if len(ema_values) >= 3 and len(sma_values) >= 3:
-                ema_trend = (ema_values.iloc[0] - ema_values.iloc[2]) / ema_values.iloc[2] * 100
-                sma_trend = (sma_values.iloc[0] - sma_values.iloc[2]) / sma_values.iloc[2] * 100
-                
-                if ema_trend > 1: signals.append(('ema', 1.0))
-                elif ema_trend > 0.2: signals.append(('ema', 0.5))
-                elif ema_trend < -1: signals.append(('ema', -1.0))
-                elif ema_trend < -0.2: signals.append(('ema', -0.5))
-                else: signals.append(('ema', 0))
-                
-                if sma_trend > 1: signals.append(('sma', 1.0))
-                elif sma_trend > 0.2: signals.append(('sma', 0.5))
-                elif sma_trend < -1: signals.append(('sma', -1.0))
-                elif sma_trend < -0.2: signals.append(('sma', -0.5))
-                else: signals.append(('sma', 0))
-                
-                if ema_values.iloc[0] > sma_values.iloc[0] and ema_values.iloc[1] <= sma_values.iloc[1]:
-                    signals.append(('ma_cross', 1.0))
-                elif ema_values.iloc[0] < sma_values.iloc[0] and ema_values.iloc[1] >= sma_values.iloc[1]:
-                    signals.append(('ma_cross', -1.0))
-                elif ema_values.iloc[0] > sma_values.iloc[0]:
-                    signals.append(('ma_cross', 0.5))
-                else:
-                    signals.append(('ma_cross', -0.5))
-        
-        confidence_scores = analyzer.calculate_confidence(signals, data['indicators'], timeframe)
-        weights = {
-            'signal_agreement': 0.4,
-            'signal_strength': 0.3,
-            'trend_consistency': 0.3
-        }
-        
-        # Calculate individual scores
-        signal_values = [s[1] for s in signals]
-        if signal_values:
-            max_diff = max(signal_values) - min(signal_values)
-            signal_agreement = (1 - max_diff/2) * 100
-            
-            abs_strengths = [abs(v) for v in signal_values]
-            avg_strength = sum(abs_strengths) / len(abs_strengths)
-            signal_strength = avg_strength * 100
-            
-            trend_score = 0
-            count = 0
-            
-            if 'ema' in data['indicators'] and not data['indicators']['ema'].empty:
-                ema_values = data['indicators']['ema']['value']
-                if len(ema_values) >= 3:
-                    moves = [1 if ema_values.iloc[i] > ema_values.iloc[i+1] else -1 
-                            for i in range(len(ema_values)-1)]
-                    consistency = sum(1 for i in range(len(moves)-1) 
-                                    if moves[i] == moves[i+1]) / (len(moves)-1)
-                    trend_score += consistency * 100
-                    count += 1
-            
-            if 'rsi' in data['indicators'] and not data['indicators']['rsi'].empty:
-                rsi_values = data['indicators']['rsi']['value']
-                if len(rsi_values) >= 3:
-                    moves = [1 if rsi_values.iloc[i] > rsi_values.iloc[i+1] else -1 
-                            for i in range(len(rsi_values)-1)]
-                    consistency = sum(1 for i in range(len(moves)-1) 
-                                    if moves[i] == moves[i+1]) / (len(moves)-1)
-                    trend_score += consistency * 100
-                    count += 1
-            
-            if 'sma' in data['indicators'] and not data['indicators']['sma'].empty:
-                sma_values = data['indicators']['sma']['value']
-                if len(sma_values) >= 3:
-                    moves = [1 if sma_values.iloc[i] > sma_values.iloc[i+1] else -1 
-                            for i in range(len(sma_values)-1)]
-                    consistency = sum(1 for i in range(len(moves)-1) 
-                                    if moves[i] == moves[i+1]) / (len(moves)-1)
-                    trend_score += consistency * 100
-                    count += 1
-            
-            trend_consistency = trend_score / max(1, count)
-            
-            print(f"Signal Agreement (40%): {signal_agreement:.1f}%")
-            print(f"Signal Strength (30%): {signal_strength:.1f}%")
-            print(f"Trend Consistency (30%): {trend_consistency:.1f}%")
-            
-            weighted_scores = {
-                'Signal Agreement': signal_agreement * weights['signal_agreement'],
-                'Signal Strength': signal_strength * weights['signal_strength'],
-                'Trend Consistency': trend_consistency * weights['trend_consistency']
-            }
-            print("\nWeighted Contributions:")
-            for name, score in weighted_scores.items():
-                print(f"{name}: {score:.1f}")
-    
-    # Print market structure
-    print("\nOverall Market Structure:")
-    print("=" * 50)
-    structure = analyzer.get_market_structure(results)
-    print(f"Primary Trend (4h): {structure['primary_trend'].value if structure['primary_trend'] else 'N/A'}")
-    print(f"Secondary Trend (1h): {structure['secondary_trend'].value if structure['secondary_trend'] else 'N/A'}")
-    print(f"Entry Trend (15m): {structure['entry_trend'].value if structure['entry_trend'] else 'N/A'}")
-    print(f"Confluence Level: {structure['confluence_level']:.1f}%")
-    print(f"Trading Bias: {structure['trading_bias'].value}")
-    print(f"Overall Confidence: {structure['confidence']:.1f}%")
+    # Pretty print the analysis
+    print(json.dumps(analysis, indent=2))
 
 if __name__ == "__main__":
     main()
