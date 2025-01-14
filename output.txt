@@ -1,0 +1,806 @@
+{
+  "symbol": "BTC/USD",
+  "timestamp": "2025-01-14T14:36:50",
+  "summary": {
+    "bias": "bearish",
+    "confidence_level": "high",
+    "volatility": "high",
+    "trade_readiness": "Ready to sell",
+    "critical_levels": {
+      "buy_zone": [
+        96815.55,
+        97203.59
+      ],
+      "sell_zone": [
+        96815.55,
+        97203.59
+      ]
+    }
+  },
+  "timeframes": {
+    "5m": {
+      "timeframe": "5m",
+      "price": {
+        "current": {
+          "timestamp": "2025-01-14T14:30:00",
+          "value": 97018.9,
+          "description": "Prix actuel de l'actif"
+        },
+        "historical": {
+          "data": [
+            {
+              "timestamp": "2025-01-14T14:10:00",
+              "value": 96300.1
+            },
+            {
+              "timestamp": "2025-01-14T14:15:00",
+              "value": 96527.0
+            },
+            {
+              "timestamp": "2025-01-14T14:20:00",
+              "value": 96530.18
+            },
+            {
+              "timestamp": "2025-01-14T14:25:00",
+              "value": 96750.88
+            },
+            {
+              "timestamp": "2025-01-14T14:30:00",
+              "value": 97018.9
+            }
+          ],
+          "description": "Prix historique sur les dernieres periodes (du plus ancien au plus recent)"
+        }
+      },
+      "volume": {
+        "current": 150.55,
+        "average": 76.89,
+        "trend": "increasing",
+        "vwap": 96864.1188
+      },
+      "trend": "bearish",
+      "indicators": {
+        "RSI": {
+          "current": {
+            "timestamp": "2025-01-14T14:30:00",
+            "value": 72.4,
+            "description": "Relative Strength Index (RSI) actuel"
+          },
+          "evolution": {
+            "value": 8.39,
+            "description": "Evolution du RSI par rapport a la periode precedente"
+          },
+          "recent_values": {
+            "data": [
+              {
+                "timestamp": "2025-01-14T14:30:00",
+                "value": 72.86
+              },
+              {
+                "timestamp": "2025-01-14T14:31:00",
+                "value": 72.26
+              },
+              {
+                "timestamp": "2025-01-14T14:32:00",
+                "value": 63.71
+              },
+              {
+                "timestamp": "2025-01-14T14:33:00",
+                "value": 64.01
+              },
+              {
+                "timestamp": "2025-01-14T14:34:00",
+                "value": 72.4
+              }
+            ],
+            "description": "Valeurs recentes du RSI sur differentes periodes"
+          },
+          "trend": "strongly_overbought"
+        },
+        "MACD": {
+          "trend": {
+            "value": "bullish",
+            "description": "Tendance du MACD"
+          },
+          "current_histogram": {
+            "timestamp": "2025-01-14T14:30:00",
+            "value": 28.01067,
+            "description": "Valeur actuelle de l'histogramme MACD"
+          },
+          "evolution_histogram": {
+            "value": 7.64409,
+            "description": "Evolution de l'histogramme du MACD"
+          },
+          "recent_histogram": {
+            "data": [
+              {
+                "timestamp": "2025-01-14T14:10:00",
+                "value": 37.37613
+              },
+              {
+                "timestamp": "2025-01-14T14:15:00",
+                "value": 37.50535
+              },
+              {
+                "timestamp": "2025-01-14T14:20:00",
+                "value": 28.19526
+              },
+              {
+                "timestamp": "2025-01-14T14:25:00",
+                "value": 20.36658
+              },
+              {
+                "timestamp": "2025-01-14T14:30:00",
+                "value": 28.01067
+              }
+            ],
+            "description": "Valeurs recentes de l'histogramme MACD"
+          },
+          "strength": "strong"
+        },
+        "EMA": {
+          "ema_20": {
+            "value": 97018.9,
+            "description": "Exponential Moving Average (EMA) sur 20 periodes"
+          },
+          "ema_50": {
+            "value": 97018.9,
+            "description": "Exponential Moving Average (EMA) sur 50 periodes"
+          },
+          "trend": "bearish",
+          "description": "Tendance de l'EMA : baissiere"
+        },
+        "SMA": {
+          "sma_20": {
+            "value": 97018.9,
+            "description": "Simple Moving Average (SMA) sur 20 periodes"
+          },
+          "sma_50": {
+            "value": 97018.9,
+            "description": "Simple Moving Average (SMA) sur 50 periodes"
+          }
+        }
+      },
+      "volatility": "high"
+    },
+    "15m": {
+      "timeframe": "15m",
+      "price": {
+        "current": {
+          "timestamp": "2025-01-14T14:30:00",
+          "value": 97018.9,
+          "description": "Prix actuel de l'actif"
+        },
+        "historical": {
+          "data": [
+            {
+              "timestamp": "2025-01-14T13:30:00",
+              "value": 96265.8
+            },
+            {
+              "timestamp": "2025-01-14T13:45:00",
+              "value": 96288.91
+            },
+            {
+              "timestamp": "2025-01-14T14:00:00",
+              "value": 96300.1
+            },
+            {
+              "timestamp": "2025-01-14T14:15:00",
+              "value": 96750.88
+            },
+            {
+              "timestamp": "2025-01-14T14:30:00",
+              "value": 97018.9
+            }
+          ],
+          "description": "Prix historique sur les dernieres periodes (du plus ancien au plus recent)"
+        }
+      },
+      "volume": {
+        "current": 150.55,
+        "average": 251.32,
+        "trend": "decreasing",
+        "vwap": 96864.1188
+      },
+      "trend": "bearish",
+      "indicators": {
+        "RSI": {
+          "current": {
+            "timestamp": "2025-01-14T14:30:00",
+            "value": 72.4,
+            "description": "Relative Strength Index (RSI) actuel"
+          },
+          "evolution": {
+            "value": 8.39,
+            "description": "Evolution du RSI par rapport a la periode precedente"
+          },
+          "recent_values": {
+            "data": [
+              {
+                "timestamp": "2025-01-14T14:30:00",
+                "value": 72.86
+              },
+              {
+                "timestamp": "2025-01-14T14:31:00",
+                "value": 72.26
+              },
+              {
+                "timestamp": "2025-01-14T14:32:00",
+                "value": 63.71
+              },
+              {
+                "timestamp": "2025-01-14T14:33:00",
+                "value": 64.01
+              },
+              {
+                "timestamp": "2025-01-14T14:34:00",
+                "value": 72.4
+              }
+            ],
+            "description": "Valeurs recentes du RSI sur differentes periodes"
+          },
+          "trend": "strongly_overbought"
+        },
+        "MACD": {
+          "trend": {
+            "value": "bullish",
+            "description": "Tendance du MACD"
+          },
+          "current_histogram": {
+            "timestamp": "2025-01-14T14:30:00",
+            "value": 33.43267,
+            "description": "Valeur actuelle de l'histogramme MACD"
+          },
+          "evolution_histogram": {
+            "value": -0.96615,
+            "description": "Evolution de l'histogramme du MACD"
+          },
+          "recent_histogram": {
+            "data": [
+              {
+                "timestamp": "2025-01-14T13:30:00",
+                "value": 37.50535
+              },
+              {
+                "timestamp": "2025-01-14T13:45:00",
+                "value": 28.19526
+              },
+              {
+                "timestamp": "2025-01-14T14:00:00",
+                "value": 20.36658
+              },
+              {
+                "timestamp": "2025-01-14T14:15:00",
+                "value": 34.39882
+              },
+              {
+                "timestamp": "2025-01-14T14:30:00",
+                "value": 33.43267
+              }
+            ],
+            "description": "Valeurs recentes de l'histogramme MACD"
+          },
+          "strength": "weak"
+        },
+        "EMA": {
+          "ema_20": {
+            "value": 97018.9,
+            "description": "Exponential Moving Average (EMA) sur 20 periodes"
+          },
+          "ema_50": {
+            "value": 97018.9,
+            "description": "Exponential Moving Average (EMA) sur 50 periodes"
+          },
+          "trend": "bearish",
+          "description": "Tendance de l'EMA : baissiere"
+        },
+        "SMA": {
+          "sma_20": {
+            "value": 97018.9,
+            "description": "Simple Moving Average (SMA) sur 20 periodes"
+          },
+          "sma_50": {
+            "value": 97018.9,
+            "description": "Simple Moving Average (SMA) sur 50 periodes"
+          }
+        }
+      },
+      "volatility": "high"
+    },
+    "1h": {
+      "timeframe": "1h",
+      "price": {
+        "current": {
+          "timestamp": "2025-01-14T14:00:00",
+          "value": 97011.13,
+          "description": "Prix actuel de l'actif"
+        },
+        "historical": {
+          "data": [
+            {
+              "timestamp": "2025-01-14T10:00:00",
+              "value": 96757.0
+            },
+            {
+              "timestamp": "2025-01-14T11:00:00",
+              "value": 96504.22
+            },
+            {
+              "timestamp": "2025-01-14T12:00:00",
+              "value": 95935.0
+            },
+            {
+              "timestamp": "2025-01-14T13:00:00",
+              "value": 96288.91
+            },
+            {
+              "timestamp": "2025-01-14T14:00:00",
+              "value": 97011.13
+            }
+          ],
+          "description": "Prix historique sur les dernieres periodes (du plus ancien au plus recent)"
+        }
+      },
+      "volume": {
+        "current": 554.39,
+        "average": 549.15,
+        "trend": "increasing",
+        "vwap": 96557.0966
+      },
+      "trend": "neutral",
+      "indicators": {
+        "RSI": {
+          "current": {
+            "timestamp": "2025-01-14T14:00:00",
+            "value": 68.1,
+            "description": "Relative Strength Index (RSI) actuel"
+          },
+          "evolution": {
+            "value": 4.29,
+            "description": "Evolution du RSI par rapport a la periode precedente"
+          },
+          "recent_values": {
+            "data": [
+              {
+                "timestamp": "2025-01-14T10:00:00",
+                "value": 71.24
+              },
+              {
+                "timestamp": "2025-01-14T11:00:00",
+                "value": 68.07
+              },
+              {
+                "timestamp": "2025-01-14T12:00:00",
+                "value": 61.45
+              },
+              {
+                "timestamp": "2025-01-14T13:00:00",
+                "value": 63.81
+              },
+              {
+                "timestamp": "2025-01-14T14:00:00",
+                "value": 68.1
+              }
+            ],
+            "description": "Valeurs recentes du RSI sur differentes periodes"
+          },
+          "trend": "overbought"
+        },
+        "MACD": {
+          "trend": {
+            "value": "bullish",
+            "description": "Tendance du MACD"
+          },
+          "current_histogram": {
+            "timestamp": "2025-01-14T14:00:00",
+            "value": 174.58978,
+            "description": "Valeur actuelle de l'histogramme MACD"
+          },
+          "evolution_histogram": {
+            "value": 6.37093,
+            "description": "Evolution de l'histogramme du MACD"
+          },
+          "recent_histogram": {
+            "data": [
+              {
+                "timestamp": "2025-01-14T10:00:00",
+                "value": 310.88774
+              },
+              {
+                "timestamp": "2025-01-14T11:00:00",
+                "value": 282.27898
+              },
+              {
+                "timestamp": "2025-01-14T12:00:00",
+                "value": 208.30765
+              },
+              {
+                "timestamp": "2025-01-14T13:00:00",
+                "value": 168.21886
+              },
+              {
+                "timestamp": "2025-01-14T14:00:00",
+                "value": 174.58978
+              }
+            ],
+            "description": "Valeurs recentes de l'histogramme MACD"
+          },
+          "strength": "strong"
+        },
+        "EMA": {
+          "ema_20": {
+            "value": 97011.13,
+            "description": "Exponential Moving Average (EMA) sur 20 periodes"
+          },
+          "ema_50": {
+            "value": 97011.13,
+            "description": "Exponential Moving Average (EMA) sur 50 periodes"
+          },
+          "trend": "bearish",
+          "description": "Tendance de l'EMA : baissiere"
+        },
+        "SMA": {
+          "sma_20": {
+            "value": 97011.13,
+            "description": "Simple Moving Average (SMA) sur 20 periodes"
+          },
+          "sma_50": {
+            "value": 97011.13,
+            "description": "Simple Moving Average (SMA) sur 50 periodes"
+          }
+        }
+      },
+      "volatility": "high"
+    },
+    "4h": {
+      "timeframe": "4h",
+      "price": {
+        "current": {
+          "timestamp": "2025-01-14T12:00:00",
+          "value": 97011.13,
+          "description": "Prix actuel de l'actif"
+        },
+        "historical": {
+          "data": [
+            {
+              "timestamp": "2025-01-13T20:00:00",
+              "value": 94506.45
+            },
+            {
+              "timestamp": "2025-01-14T00:00:00",
+              "value": 94836.47
+            },
+            {
+              "timestamp": "2025-01-14T04:00:00",
+              "value": 94828.02
+            },
+            {
+              "timestamp": "2025-01-14T08:00:00",
+              "value": 96504.22
+            },
+            {
+              "timestamp": "2025-01-14T12:00:00",
+              "value": 97011.13
+            }
+          ],
+          "description": "Prix historique sur les dernieres periodes (du plus ancien au plus recent)"
+        }
+      },
+      "volume": {
+        "current": 1900.22,
+        "average": 2055.08,
+        "trend": "decreasing",
+        "vwap": 96436.7131
+      },
+      "trend": "neutral",
+      "indicators": {
+        "RSI": {
+          "current": {
+            "timestamp": "2025-01-14T12:00:00",
+            "value": 68.1,
+            "description": "Relative Strength Index (RSI) actuel"
+          },
+          "evolution": {
+            "value": 4.29,
+            "description": "Evolution du RSI par rapport a la periode precedente"
+          },
+          "recent_values": {
+            "data": [
+              {
+                "timestamp": "2025-01-14T10:00:00",
+                "value": 71.24
+              },
+              {
+                "timestamp": "2025-01-14T11:00:00",
+                "value": 68.07
+              },
+              {
+                "timestamp": "2025-01-14T12:00:00",
+                "value": 61.45
+              },
+              {
+                "timestamp": "2025-01-14T13:00:00",
+                "value": 63.81
+              },
+              {
+                "timestamp": "2025-01-14T14:00:00",
+                "value": 68.1
+              }
+            ],
+            "description": "Valeurs recentes du RSI sur differentes periodes"
+          },
+          "trend": "overbought"
+        },
+        "MACD": {
+          "trend": {
+            "value": "bullish",
+            "description": "Tendance du MACD"
+          },
+          "current_histogram": {
+            "timestamp": "2025-01-14T12:00:00",
+            "value": 174.58978,
+            "description": "Valeur actuelle de l'histogramme MACD"
+          },
+          "evolution_histogram": {
+            "value": 6.37093,
+            "description": "Evolution de l'histogramme du MACD"
+          },
+          "recent_histogram": {
+            "data": [
+              {
+                "timestamp": "2025-01-13T20:00:00",
+                "value": 310.88774
+              },
+              {
+                "timestamp": "2025-01-14T00:00:00",
+                "value": 282.27898
+              },
+              {
+                "timestamp": "2025-01-14T04:00:00",
+                "value": 208.30765
+              },
+              {
+                "timestamp": "2025-01-14T08:00:00",
+                "value": 168.21886
+              },
+              {
+                "timestamp": "2025-01-14T12:00:00",
+                "value": 174.58978
+              }
+            ],
+            "description": "Valeurs recentes de l'histogramme MACD"
+          },
+          "strength": "strong"
+        },
+        "EMA": {
+          "ema_20": {
+            "value": 97011.13,
+            "description": "Exponential Moving Average (EMA) sur 20 periodes"
+          },
+          "ema_50": {
+            "value": 97011.13,
+            "description": "Exponential Moving Average (EMA) sur 50 periodes"
+          },
+          "trend": "bearish",
+          "description": "Tendance de l'EMA : baissiere"
+        },
+        "SMA": {
+          "sma_20": {
+            "value": 97011.13,
+            "description": "Simple Moving Average (SMA) sur 20 periodes"
+          },
+          "sma_50": {
+            "value": 97011.13,
+            "description": "Simple Moving Average (SMA) sur 50 periodes"
+          }
+        }
+      },
+      "volatility": "high"
+    },
+    "1d": {
+      "timeframe": "1d",
+      "price": {
+        "current": {
+          "timestamp": "2025-01-14T00:00:00",
+          "value": 97009.57,
+          "description": "Prix actuel de l'actif"
+        },
+        "historical": {
+          "data": [
+            {
+              "timestamp": "2025-01-10T00:00:00",
+              "value": 94701.18
+            },
+            {
+              "timestamp": "2025-01-11T00:00:00",
+              "value": 94565.02
+            },
+            {
+              "timestamp": "2025-01-12T00:00:00",
+              "value": 94580.0
+            },
+            {
+              "timestamp": "2025-01-13T00:00:00",
+              "value": 94506.45
+            },
+            {
+              "timestamp": "2025-01-14T00:00:00",
+              "value": 97009.57
+            }
+          ],
+          "description": "Prix historique sur les dernieres periodes (du plus ancien au plus recent)"
+        }
+      },
+      "volume": {
+        "current": 7058.38,
+        "average": 9308.57,
+        "trend": "decreasing",
+        "vwap": 95915.7069
+      },
+      "trend": "strong_bearish",
+      "indicators": {
+        "RSI": {
+          "current": {
+            "timestamp": "2025-01-14T00:00:00",
+            "value": 52.03,
+            "description": "Relative Strength Index (RSI) actuel"
+          },
+          "evolution": {
+            "value": 5.86,
+            "description": "Evolution du RSI par rapport a la periode precedente"
+          },
+          "recent_values": {
+            "data": [
+              {
+                "timestamp": "2025-01-10T00:00:00",
+                "value": 46.54
+              },
+              {
+                "timestamp": "2025-01-11T00:00:00",
+                "value": 46.29
+              },
+              {
+                "timestamp": "2025-01-12T00:00:00",
+                "value": 46.33
+              },
+              {
+                "timestamp": "2025-01-13T00:00:00",
+                "value": 46.17
+              },
+              {
+                "timestamp": "2025-01-14T00:00:00",
+                "value": 52.03
+              }
+            ],
+            "description": "Valeurs recentes du RSI sur differentes periodes"
+          },
+          "trend": "neutral"
+        },
+        "MACD": {
+          "trend": {
+            "value": "bearish",
+            "description": "Tendance du MACD"
+          },
+          "current_histogram": {
+            "timestamp": "2025-01-14T00:00:00",
+            "value": -111.77144,
+            "description": "Valeur actuelle de l'histogramme MACD"
+          },
+          "evolution_histogram": {
+            "value": 188.21402,
+            "description": "Evolution de l'histogramme du MACD"
+          },
+          "recent_histogram": {
+            "data": [
+              {
+                "timestamp": "2025-01-10T00:00:00",
+                "value": -298.83646
+              },
+              {
+                "timestamp": "2025-01-11T00:00:00",
+                "value": -321.24925
+              },
+              {
+                "timestamp": "2025-01-12T00:00:00",
+                "value": -316.53187
+              },
+              {
+                "timestamp": "2025-01-13T00:00:00",
+                "value": -299.98546
+              },
+              {
+                "timestamp": "2025-01-14T00:00:00",
+                "value": -111.77144
+              }
+            ],
+            "description": "Valeurs recentes de l'histogramme MACD"
+          },
+          "strength": "weak"
+        },
+        "EMA": {
+          "ema_20": {
+            "value": 97009.57,
+            "description": "Exponential Moving Average (EMA) sur 20 periodes"
+          },
+          "ema_50": {
+            "value": 97009.57,
+            "description": "Exponential Moving Average (EMA) sur 50 periodes"
+          },
+          "trend": "bearish",
+          "description": "Tendance de l'EMA : baissiere"
+        },
+        "SMA": {
+          "sma_20": {
+            "value": 97009.57,
+            "description": "Simple Moving Average (SMA) sur 20 periodes"
+          },
+          "sma_50": {
+            "value": 97009.57,
+            "description": "Simple Moving Average (SMA) sur 50 periodes"
+          }
+        }
+      },
+      "volatility": "high"
+    }
+  },
+  "confluence_zones": {
+    "high_confidence": {
+      "range": [
+        96815.55,
+        97203.59
+      ],
+      "aligned_indicators": [
+        "EMA20 (1d) MACD bearish",
+        "EMA20 (1d) EMA bearish",
+        "EMA50 (1d) MACD bearish",
+        "EMA50 (1d) EMA bearish",
+        "Price (1d) MACD bearish",
+        "Price (1d) EMA bearish",
+        "EMA20 (1h) RSI overbought",
+        "EMA20 (1h) MACD bullish",
+        "EMA20 (1h) EMA bearish",
+        "EMA20 (4h) RSI overbought",
+        "EMA20 (4h) MACD bullish",
+        "EMA20 (4h) EMA bearish",
+        "EMA50 (1h) RSI overbought",
+        "EMA50 (1h) MACD bullish",
+        "EMA50 (1h) EMA bearish",
+        "EMA50 (4h) RSI overbought",
+        "EMA50 (4h) MACD bullish",
+        "EMA50 (4h) EMA bearish",
+        "Price (1h) RSI overbought",
+        "Price (1h) MACD bullish",
+        "Price (1h) EMA bearish",
+        "Price (4h) RSI overbought",
+        "Price (4h) MACD bullish",
+        "Price (4h) EMA bearish",
+        "EMA20 (15m) RSI overbought",
+        "EMA20 (15m) MACD bullish",
+        "EMA20 (15m) EMA bearish",
+        "EMA20 (5m) RSI overbought",
+        "EMA20 (5m) MACD bullish",
+        "EMA20 (5m) EMA bearish",
+        "EMA50 (15m) RSI overbought",
+        "EMA50 (15m) MACD bullish",
+        "EMA50 (15m) EMA bearish",
+        "EMA50 (5m) RSI overbought",
+        "EMA50 (5m) MACD bullish",
+        "EMA50 (5m) EMA bearish",
+        "Price (15m) RSI overbought",
+        "Price (15m) MACD bullish",
+        "Price (15m) EMA bearish",
+        "Price (5m) RSI overbought",
+        "Price (5m) MACD bullish",
+        "Price (5m) EMA bearish"
+      ]
+    }
+  },
+  "suggested_trade": {
+    "action": "Sell",
+    "entry": 97009.57,
+    "stop_loss": 101860.0485,
+    "take_profit": 82458.1345,
+    "risk_reward": 3.0
+  }
+}
